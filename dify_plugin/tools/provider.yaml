@@ -1,0 +1,26 @@
+identity:
+  author: Dify Helper
+  name: claude_code_bridge
+  label:
+    en_US: Claude Code Bridge
+    zh_Hans: Claude Code 桥接
+description:
+  en_US: Invoke local Claude Code CLI to build Dify apps
+  zh_Hans: 调用本地 Claude Code CLI 搭建 Dify 应用
+icon: icon.svg
+credentials_for_provider:
+  - name: bridge_url
+    type: text-input
+    required: true
+    label:
+      en_US: Bridge Service URL
+      zh_Hans: 桥接服务地址
+    help:
+      en_US: URL of the local bridge service, e.g. http://your-host:8000
+      zh_Hans: 本地桥接服务地址，如 http://your-host:8000
+    placeholder:
+      en_US: http://localhost:8000
+      zh_Hans: http://localhost:8000
+extra:
+  python:
+    source: tools/provider.py

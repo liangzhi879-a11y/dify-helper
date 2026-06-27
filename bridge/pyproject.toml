@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dify-claude-bridge"
+version = "0.1.0"
+description = "Local bridge service connecting Dify with Claude Code CLI"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+dify-bridge = "bridge.app:main"
+
+[tool.setuptools.packages.find]
+include = ["bridge*"]

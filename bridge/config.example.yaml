@@ -1,0 +1,27 @@
+# Bridge 服务配置模板
+# 复制本文件为 config.yaml 并按需修改：cp config.example.yaml config.yaml
+
+# 监听地址：0.0.0.0 表示所有网卡（生产环境），127.0.0.1 仅本机
+host: 0.0.0.0
+
+# 监听端口：默认 8001（8000 常被其他服务占用）
+port: 8001
+
+# Claude Code CLI 可执行文件路径
+# Linux/Mac: claude
+# Windows: claude（系统会自动查找 claude.cmd）
+claude_path: claude
+
+# Claude Code 工作目录（Claude 在此目录下读写文件、执行命令）
+# 部署到服务器时改为实际项目路径，如 /opt/dify-helper
+work_dir: .
+
+# 单任务超时秒数（一次性 headless 任务）
+# 复杂任务（debug run、索引等待）较慢，建议 ≥ 600
+timeout: 600
+
+# MCP Server 启动命令
+mcp_server_cmd: python -m mcp_server
+
+# 一次性任务最大并发数（SSE 会话不受此限，每个会话独立子进程）
+max_concurrent: 1

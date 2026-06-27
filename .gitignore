@@ -1,0 +1,74 @@
+# ==================== Python ====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.whl
+MANIFEST
+
+# ==================== 虚拟环境 ====================
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ==================== 测试缓存 ====================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# ==================== 敏感配置（绝不提交）====================
+# .env 含 Dify 凭据（密码、token），必须本地保留，不入库
+.env
+.env.local
+.env.*.local
+mcp_server/.env
+bridge/config.yaml
+
+# ==================== IDE / 编辑器 ====================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==================== Trae IDE 留痕（开发过程产物，不公开）====================
+.trae/
+
+# ==================== 日志 ====================
+*.log
+logs/
+
+# ==================== 临时文件 ====================
+*.tmp
+*.bak
+*.orig
+
+# ==================== Claude Code 运行时 ====================
+.claude/
+.mcp.json.local
+
+# ==================== Dify 插件打包产物 ====================
+*.difypkg
+dify_plugin/dist/

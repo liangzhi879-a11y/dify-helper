@@ -1,0 +1,32 @@
+identity:
+  name: query_status
+  author: Dify Helper
+  label:
+    en_US: Query Task Status
+    zh_Hans: 查询任务状态
+description:
+  en_US: Query the status of a Claude Code task by task_id via bridge service
+  zh_Hans: 通过桥接服务按任务 ID 查询 Claude Code 任务状态
+parameters:
+  - name: task_id
+    type: string
+    required: true
+    label:
+      en_US: Task ID
+      zh_Hans: 任务 ID
+    help:
+      en_US: The task_id returned by submit_task
+      zh_Hans: 由 submit_task 返回的任务 ID
+    auto_generate: false
+    placeholder:
+      en_US: Paste the task_id returned by submit_task
+      zh_Hans: 粘贴 submit_task 返回的 task_id
+extra:
+  python:
+    source: tools/query_status.py
+output:
+  result:
+    type: string
+    label:
+      en_US: Result
+      zh_Hans: 结果

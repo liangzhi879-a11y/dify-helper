@@ -1,0 +1,32 @@
+version: 0.0.1
+type: tool
+author:
+  name: Dify Helper
+  url: https://github.com/dify-helper
+icon: icon.svg
+label:
+  en_US: Claude Code Bridge
+  zh_Hans: Claude Code 桥接
+description:
+  en_US: Bridge to invoke local Claude Code CLI for building Dify agents/workflows
+  zh_Hans: 调用本地 Claude Code CLI，在 Dify 中自动搭建 Agent/工作流/知识库
+resource:
+  memory: 134217728
+  permission:
+    tool:
+      enabled: true
+    model:
+      enabled: false
+    endpoint:
+      enabled: false
+    app:
+      enabled: false
+    storage:
+      enabled: false
+plugins:
+  tools:
+    - name: tools/provider.yaml
+      tools:
+        - tools/submit_task.yaml
+        - tools/query_status.yaml
+        - tools/get_result.yaml

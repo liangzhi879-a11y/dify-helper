@@ -1,0 +1,32 @@
+identity:
+  name: submit_task
+  author: Dify Helper
+  label:
+    en_US: Submit Task to Claude Code
+    zh_Hans: 提交任务给 Claude Code
+description:
+  en_US: Submit a natural language task to Claude Code CLI via bridge service, returns task_id
+  zh_Hans: 通过桥接服务向 Claude Code 提交自然语言任务，返回任务 ID
+parameters:
+  - name: task_description
+    type: string
+    required: true
+    label:
+      en_US: Task Description
+      zh_Hans: 任务描述
+    help:
+      en_US: Natural language description of what Claude Code should do, e.g. "Create a customer service workflow with knowledge retrieval and LLM reply nodes"
+      zh_Hans: 用自然语言描述 Claude Code 要做的事，如"创建一个客服工作流，包含知识库检索和 LLM 回复节点"
+    auto_generate: false
+    placeholder:
+      en_US: Describe what you want Claude Code to build in Dify
+      zh_Hans: 描述你想让 Claude Code 在 Dify 中搭建什么
+extra:
+  python:
+    source: tools/submit_task.py
+output:
+  result:
+    type: string
+    label:
+      en_US: Result
+      zh_Hans: 结果
