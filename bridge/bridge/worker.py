@@ -78,11 +78,17 @@ class Worker:
             )
 
             # 4. 启动子进程，工作目录设为 config.work_dir
+            # 【模型锁定】强制注入 ANTHROPIC_MODEL
+            proc_env = os.environ.copy()
+            if self._config.claude_model:
+                proc_env["ANTHROPIC_MODEL"] = self._config.claude_model
+
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=self._config.work_dir,
+                env=proc_env,
             )
 
             # 4. 用 asyncio.wait_for 包裹，超时则 kill 进程

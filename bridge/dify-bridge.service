@@ -1,0 +1,31 @@
+[Unit]
+Description=Dify Claude Bridge (FastAPI on port 8002)
+Documentation=file:///home/sutai/dify-helper/docs/deployment.md
+After=network.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sutai
+Group=sutai
+# WorkingDirectory 必须在 bridge/ 下，否则 app.py 找不到 config.yaml
+WorkingDirectory=/home/sutai/dify-helper/bridge
+Environment="PATH=/home/sutai/dify-helper/.venv/bin:/opt/anaconda3/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+EnvironmentFile=-/home/sutai/dify-helper/mcp_server/.env
+ExecStart=/home/sutai/dify-helper/.venv/bin/python -m bridge.app
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dify-bridge
+
+# 安全加固
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/sutai/dify-helper
+
+[Install]
+WantedBy=multi-user.target

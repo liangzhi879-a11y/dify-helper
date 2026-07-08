@@ -78,11 +78,30 @@ def write_mcp_config(mcp_server_cmd: str) -> str:
     return path
 
 
+# ★ 0.2.7: 模式 → CLI flag 映射
+# bypass（auto）用 bypassPermissions + allow-dangerously-skip-permissions 组合，
+# 自动批准所有工具调用；plan 只输出规划；default 每次工具调用都需确认（headless
+# 不推荐，会卡死）；acceptEdits 仅自动批准 Edit/Write。
+_MODE_PERMISSION_FLAGS = {
+    "bypass":      ["--permission-mode", "bypassPermissions",
+                    "--allow-dangerously-skip-permissions"],
+    "plan":        ["--permission-mode", "plan"],
+    "default":     ["--permission-mode", "default"],
+    "acceptEdits": ["--permission-mode", "acceptEdits"],
+}
+
+
+def _permission_flags_for(mode: str) -> list[str]:
+    """根据 mode 返回对应的 CLI flag。未知 mode 降级到 bypass。"""
+    return _MODE_PERMISSION_FLAGS.get(mode, _MODE_PERMISSION_FLAGS["bypass"])
+
+
 def build_claude_command(
     claude_path: str,
     description: str,
     config_path: str,
     output_format: str = "text",
+    mode: str = "bypass",                       # ★ 0.2.7
 ) -> list[str]:
     """构建一次性 -p 调用命令（headless 模式）。
 
@@ -98,11 +117,7 @@ def build_claude_command(
         claude_exec,
         "-p", single_line_desc,
         "--mcp-config", config_path,
-        # bypassPermissions + allow-dangerously-skip-permissions 组合：
-        # 自动批准所有 MCP 工具调用，避免 headless 模式卡在权限提示。
-        # 比 --allowedTools "mcp__dify__*" 更可靠（后者通配符在 shell 下会被展开）
-        "--permission-mode", "bypassPermissions",
-        "--allow-dangerously-skip-permissions",
+        *_permission_flags_for(mode),            # ★ 0.2.7
         "--output-format", output_format,
     ]
 
@@ -112,6 +127,7 @@ def build_claude_command(
 def build_stream_json_command(
     claude_path: str,
     config_path: str,
+    mode: str = "bypass",                       # ★ 0.2.7
 ) -> list[str]:
     """构建 stream-json 持久进程命令（用于 SessionManager）。
 
@@ -119,20 +135,27 @@ def build_stream_json_command(
     - 输入：stdin 写入 JSON 行 `{"type":"user","message":{"role":"user","content":[{"type":"text","text":"..."}]}}`
     - 输出：stdout 输出 JSON 行，含 stream_event/assistant/result/system 等类型
     - --include-partial-messages: 启用 text_delta 流式增量
+
+    用 stdbuf -oL -eL 包裹：claude CLI 是 Node 二进制，默认 stdout 是全缓冲（4KB 阈值），
+    不到 4KB 不 flush。stdbuf 强制 line-buffered，让 text_delta 增量立即到达，
+    避免用户"问进度才看到输出"的延迟感。
     """
     claude_exec = _resolve_claude_exec(claude_path)
 
     cmd = [
         claude_exec,
         "--mcp-config", config_path,
-        "--permission-mode", "bypassPermissions",
-        "--allow-dangerously-skip-permissions",
+        *_permission_flags_for(mode),            # ★ 0.2.7
         "--input-format", "stream-json",
         "--output-format", "stream-json",
         "--include-partial-messages",
         "--verbose",
     ]
 
+    # 用 stdbuf 包裹（如果系统有）强制行缓冲。找不到 stdbuf 就直接返回原命令
+    # （Windows / 容器环境可能没装 stdbuf）。
+    if shutil.which("stdbuf"):
+        return ["stdbuf", "-oL", "-eL", *cmd]
     return cmd
 
 

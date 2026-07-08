@@ -17,6 +17,7 @@ class TaskStatus(str, Enum):
 
 class Task(BaseModel):
     id: str
+    user_id: str = ""                 # v0.3.0 Phase 2: 拥有者（isolation key）
     description: str
     status: TaskStatus = TaskStatus.pending
     result: str | None = None
