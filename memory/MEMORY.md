@@ -1,0 +1,45 @@
+- [Title](dify-batch-rename-key-conflict.md) — 多个节点同名字段重命名必须用嵌套 dict `{node_id: {old: new}}`，flat dict comprehension 会因 key 冲突导致只剩最后一个值
+- [bridge multi-user isolation](bridge-multi-user-isolation.md) — Dify Helper 多用户隔离架构（IP+UA fingerprint / SQLite 联合主键 / per-user worker / HMAC-SHA256+uuid5）+ 3 个易踩的坑
+- [Title](dify-dual-copy-children-vs-top.md) — loop 节点维护顶层 + children 两份子节点副本，改字段必须两份都改；children 在 loop 节点顶层字段，不在 data 里
+- [Title](dify-code-node-outputs-require-value-type.md) — Dify code node outputs[] 必须同时含 type + value_type，否则 UI 降级显示 array index（"0"/"1"/...）作 fallback label
+- [Title](dify-patch-first-compare-normal-node.md) — PATCH Dify workflow 出错时第一动作必须是"对比正常同类节点 schema"，不是反复试字段
+- [Title](tampermonkey-shadow-dom-color-inheritance.md) — Tampermonkey + Shadow DOM 主题适配必须区分普通元素继承 vs form 元素（textarea/input）UA 拦截；`:host, * { color }` 会破坏继承
+- [Dify code 节点沙箱隔离 os.environ](dify-code-node-os-environ-blocked.md) — code 节点里 `_os.environ` 是空 dict，environment_variables 必须用 sys/env 选择器注入，不能用 os.environ.get
+- [Dify loop 里 code raise 终止整个循环](dify-loop-qc-raise-terminates.md) — loop 默认 error_handle_mode=terminated，code 节点 raise 会断 loop；QC 失败必须 return sentinel 让 loop 继续
+- [Dify code 节点输出按累积字段 1:1 拆](dify-code-node-split-outputs-for-accumulator.md) — loop 内 assigner 累积必须 1:1 拆 outputs，不能只输出合并 markdown
+- [Dify loop/code outputs 类型必须实测一致](dify-loop-outputs-type-mismatch.md) — loop outputs 类型要与 assigner append 实际值一致；code outputs type 和 value_type 必须一致
+- [Dify loop children 旧副本要同步清边](dify-loop-children-stale-orphan-nodes.md) — children 是独立 mini-workflow；清理旧 children-only 节点时必须同步删 children.edges 否则 broken edge
+- [Dify HTTP URL 禁止硬编码 127.0.0.1](dify-http-node-hardcode-localhost.md) — 必须用 environment_variables + {{env.XXX}} 引用，部署后只改 env var 不改 workflow
+- [Dify loop output_selector 非必填字段](dify-loop-output-selector-not-required.md) — BaseLoopNodeData 不含 output_selector，前端 UI 残留字段；后端不校验，看到 3-tuple 指向内部节点可不动
+- [Dify code node code_language 必须是 python3](dify-code-language-python-must-be-python3.md) — graphon 包用 Literal["python3","javascript"] 校验，"python" (无 3) 会触发 pydantic literal error；outputs 必须 dict 格式
+- [Dify LLM 节点替代 QC code 节点保留后向兼容字段名](dify-llm-qc-replaces-code-passes-improved-text.md) — QC code 改 LLM 必须用 structured_output + 同名字段；段落组装 value_selector 2-tuple → 3-tuple
+- [Tampermonkey IIFE 内 let/const 必须在同步调用前声明](tampermonkey-iife-let-tdz-floating-window.md) — detectBridge/start 调用前所有 let/const 都要集中，否则 TDZ 抛 "Cannot access 'X' before initialization"；shadowRoot/hostEl/_DIFY_PATH_PREFIXES 都要在 state 之后声明；**且必须 bump @version + 加 typeof 守卫（旧 Tampermonkey 缓存命中可能让"修了不生效"）**
+- [Dify 1.14+ 导入走 /apps/imports + yaml-content](dify-import-mode-yaml-content.md) — 复刻应用的标准做法：export.yaml → 改 name → POST /apps/imports body 用 yaml_content raw + mode="yaml-content"；MCP `dify_import_dsl` 的 data+base64+yaml-only 形态在本版本 404
+- [Dify assigner items.input_type 是 Pydantic 必填](dify-assigner-items-input-type-required.md) — VariableAssignerNodeData.items[] 每条都必须有 input_type（"variable"）；同 assigner 漏一个也会 strict validation 400；DSL import 不自动补齐，要 import 前 assert 一遍或 import 后 PATCH
+- [Dify ToolNodeData 必填 3 层](dify-tool-node-data-required-fields.md) — strict validation 报 2 validation errors for ToolNodeData；marketplace plugin (vendor/name/name) 一律 provider_type="builtin"（不是 "plugin"），tool_label 兜底用 tool_name；**还要补 tool_parameters 结构化 {type,value} + paramSchemas + params + tool_description，否则 layer 2 strict 拒绝**
+- [Dify plugin daemon 不能用 127.0.0.1 调同 host 服务](dify-dochub-container-dns-not-loopback.md) — plugin daemon 是 docker 容器，loopback 不是 host；DocHub base_url 必须是 http://dochub-app:8080 (容器 DNS)；模板唯一 ID e2bb9951-05a4-498d-8c1f-ff9ef47f560b
+- [Dify LLM 输出 token 截断 → 下游全断](dify-llm-output-truncation-breaks-downstream.md) — LLM 输出超 max_tokens (默认 4096 for minimax-m2.7-highspeed) 被截，finish_reason=length，structured_output 解析失败 → 下游"卡住"假象；症状是 workflow_finished.total_steps 等于上游节点数
+- [Dify workflow 1200s server cap 不可 per-app PATCH](dify-loop-timeout-app-max-execution.md) — `APP_MAX_EXECUTION_TIME` env var (api/configs/feature/__init__.py) 默认 1200s；只能 cap loop_count + bump max_tokens 来 fit
+- [Dify code node intro_text value_selector 错指](dify-code-node-intro-text-wrong-ref.md) — PATCH 17 LLM QC 替换 code QC 时漏改 value_selector；intro_text 和 accept_text 都指向 QC_accept → `len(None)` 崩
+- [Dify LLM structured_output 兜底 code 节点](dify-llm-structured-output-fallback-defaults.md) — m2.7-highspeed thinking 模式下 structured_output 可能缺字段；插 code node 把 14 字段全部 default 化，下游 read from code node
+- [Dify defensive node 必须在 loop 内](dify-defensive-node-must-be-in-loop.md) — 在顶图写 defensive code node 不参与 iter；in-loop (parentId=loop_id) 才能 every-iter 重建并让下游拿 per-iter 字段
+- [Dify DocHub template_id 必须 UUID 硬编码](dify-dochub-template-id-must-be-uuid.md) — tool 节点的 template_id 不解析 env var 也不接文件名；tool_configurations + tool_parameters 两处都要写 UUID；模板验证用 docker network 内 curl + X-API-Key header
+- [Dify LLM QC 节点硬约束→软化 (PATCH 28)](dify-qc-strict-passed-fails-everything.md) — "硬约束必须全部满足" 让通过率 0/6；改 "参考标准 4/3 通过 + 兜底原文保留" → 5/7；改 1 QC 节点实际影响全部 3 QC
+- [Dify 3 QC 节点必须同时软化 (PATCH 29)](dify-qc-3node-soften-at-once.md) — m2.7 LLM 跨节点风格耦合，单 QC 软化卡 71%，3 QC 同时软化才能 100%；max_tokens 8000→12000 给 thinking + JSON 留余量
+- [DocHub 文档 3 条下载路径 + nginx 反代](dochub-file-download-lan-and-external.md) — LAN 直连 192.168.3.243:8088 + Dify nginx /dochub-files/ 反代（自动注入 X-API-Key）+ 公网 4 种方案选型
+- [Nginx /api/v1/files/ 反代修复 DocHub 公网下载](nginx-dochub-api-v1-files-reverse-proxy.md) — DocHub 返回 downloadUrl 是相对路径，浏览器拼 host 直击 /api/v1/files/download；nginx 加 ^~ /api/v1/files/ location + 自动注入 X-API-Key，公网 9980/LAN 80/容器外全部通
+- [Dify {{#xxx#}} 是 regex 不是 jinja2，无 fallback filter](dify-break-conditions-jinja-no-fallback.md) — break_conditions.value 引不存在的变量时渲染为字面量字符串，processor 报 "Cannot convert 'sys.xxx' to number"；必须用 conversation_variable (有 default) 兜底，不能用 jinja2 |default filter
+- [Dify conversation_variable 1.14+ UI 不可改，用 env_variable](dify-conversation-variable-not-ui-editable.md) — conversation_variable 在 Dify 1.14+ 是 internal schema，user 在 UI 上没法编辑；要让 user 在 workflow 设置改值，必须用 environment_variable（顶部 Env Panel 可改）
+- [MCP model-config 用 POST / import 用 /apps/imports](mcp-modelconfig-post-import-imports.md) — update_app_model_config PATCH→405 应改 POST(整体替换);import_dsl /apps/import→404 应改 POST /apps/imports + yaml_content 原文(不 base64)
+- [Dify 改 loop 上限翻车链 (PATCH 31-36)](dify-rd-total-count-patch-chain.md) — sys/env/conversation 三命名空间互斥：UI 改走 env+publish，API 覆盖走 start input+required，两者不可兼得；start input required=True 在 console run server 端不 raise 且 default 不注入
+- [minimax-m3 + Tavily 真检索专利 (PATCH 37)](minimax-m3-tavily-real-patent.md) — agent-chat 配 tavily(19 参数)首选 minimax-m3+function_call；Qwen3.6 不调；prompt 必加"只引用 tool 返回,禁止补全专利号"压制 hallucination
+- [Dify minimax-m3 + workflow tool 不调 (PATCH 38)](dify-agent-chat-minimax-workflow-tool-not-called.md) — agent-chat + provider_type="workflow" minimax-m3 function_call/react 都不调，agent_thought tool="" position=1；与 builtin tavily 形成对比；📜 合同审查同款问题
+- [Dify DocHub 空日期 → cn_date_to_iso 占位 (PATCH 30)](dify-dochub-empty-date-cn-date-to-iso.md) — DocHub dataJson RFC 3339 拒收空串；cn_date_to_iso 空输入必须填 "2024-01-01" 占位而非透传 ""
+- [Dify task_summary int(dict) 防御性 (PATCH 31+32)](dify-loop-0-iter-count-down-dict.md) — env=1 / 0 iter 时 Dify 把 loop var 包成 dict {"count_down": 1}，int() 直接崩；必须 _to_int() 防御性封装；PATCH 32 修复 PATCH 31 漏注函数定义的 bug
+- [Dify loop var_type 不支持 array[file] (PATCH 39 rollback)](dify-loop-var-type-array-file-unsupported.md) — graphon LoopNodeData.loop_variables[].var_type 合法值不含 array[file]（合法：string/number/object/boolean + array[string/number/object/boolean]）；想存 file 改 array[string] 存 URL 或 array[object] 存 descriptor；rollback 脚本要先 GET 当前 hash 覆盖 BEFORE hash 防 409
+- [Dify m2.7 LLM thinking 撞 max_tokens (PATCH 33)](dify-llm-thinking-tokens-budget.md) — QC-accept writer 输出 8000+ 字时, QC thinking + JSON 总 > 12000 tokens; 需 max_tokens ≥ 16000; writer elapsed > 60s 必查下游 QC max_tokens
+- [DocHub base64 严格解码 500 (PATCH 34 diag)](dify-dochub-base64-strict-decoder-length-93.md) — `Base64.getUrlDecoder()` 拒绝 length % 4 == 1 (93 chars) 的 URL；用户 URL 同时含 15-char timestamp 文件引用，文件根本不存在。**诊断不出代码问题：DocHub 当前 + nginx 反代完全健康，rerun workflow 即 200 OK**
+- [DocHub Poi-tl 1.12.2 双层 bug 占位符不替换 (PATCH 42)](poi-tl-placeholder-spaces-and-runs.md) — `0 MetaTemplates` 是 Word 切碎 run + Poi-tl regex 不识别空格 {{ var }} 双层叠加，schema 提取 OK 但 render 失败；修复需 Step1 合并跨 run + Step2 去占位符内空格，缺一不可；富文本 {{r xxx }} 需 Poi-tl 1.13+
+- [Poi-tl 1.13+ 不存在](poi-tl-no-1-13-release.md) — GitHub 最后 release = v1.12.2 (2024-01-25)；1.12.3-beta1 是 Maven mirror 上的非正式构建无新功能；`{{r xxx}}` 富文本 Poi-tl 全系列不支持；任何"升级 1.13+ 让富文本生效"设想都是基于错误信息
+- [docxtpl p 标志段落模式](docxtpl-p-flag-paragraph-mode.md) — DocHub/docxtpl 模板多段富文本字段必须用 `{{p var }}` 标志，普通 `{{ var }}` 会丢 LLM 输出的 `\n\n` 软回车/空格，整段挤 1 个 `<w:p>`
+- [DocHub *_cn 后缀触发 RFC 3339 schema](dify-dochub-date-suffix-triggers-rfc3339-schema.md) — DocHub 自动把 `*_cn` 字段推断成 date 拒收中文；中文显示必须双字段：`*_cn` 传 ISO（满足 schema）+ `*_cn_text` 传中文（模板渲染）
