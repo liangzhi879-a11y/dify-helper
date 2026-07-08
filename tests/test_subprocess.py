@@ -1,21 +1,37 @@
-"""测试 asyncio.create_subprocess_exec 直接调用 claude.cmd（不用 cmd /c）。"""
+"""测试 asyncio.create_subprocess_exec 直接调用 claude CLI（跨平台）。
+- Windows: claude.cmd（npm shim 在 PowerShell 路径下要加 .cmd）
+- Linux/macOS: claude
+"""
 import asyncio
 import os
 import shutil
 import sys
 
+
+def resolve_claude() -> str:
+    """跨平台解析 claude CLI 路径。"""
+    if sys.platform == "win32":
+        path = shutil.which("claude.cmd") or shutil.which("claude")
+    else:
+        path = shutil.which("claude")
+    if not path:
+        raise FileNotFoundError(
+            "未找到 claude CLI，请先安装 Claude Code 并确保在 PATH 中"
+        )
+    return path
+
+
 async def main():
-    resolved = shutil.which("claude")
+    resolved = resolve_claude()
     print(f"resolved: {resolved}")
-    cmd_variant = resolved + ".cmd"
-    print(f"cmd_variant exists: {os.path.exists(cmd_variant)}")
+    print(f"exists: {os.path.exists(resolved)}")
 
     mcp_config = os.path.abspath(".mcp.json")
     print(f"mcp_config abs: {mcp_config}, exists: {os.path.exists(mcp_config)}")
 
     desc = "调用 dify_list_apps_summary 工具，告诉我应用总数。直接调用，无需请求权限。"
     cmd = [
-        cmd_variant,
+        resolved,
         "-p", desc,
         "--mcp-config", mcp_config,
         "--permission-mode", "bypassPermissions",

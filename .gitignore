@@ -64,6 +64,10 @@ logs/
 *.tmp
 *.bak
 *.orig
+# 一次性 PATCH 脚本（沉淀后移到 backups/_tmp_scripts/，避免污染仓库根）
+_tmp_*.py
+_tmp_*.yaml
+_tmp_*.json
 
 # ==================== Claude Code 运行时 ====================
 .claude/
@@ -72,3 +76,10 @@ logs/
 # ==================== Dify 插件打包产物 ====================
 *.difypkg
 dify_plugin/dist/
+bridge/data/
+bridge/.env
+docs/dify-raw/_raw_cache/
+
+# ==================== 本地备份 / 工作产物（不公开）====================
+backups/
+apps/

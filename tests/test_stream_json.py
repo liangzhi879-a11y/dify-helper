@@ -8,9 +8,28 @@ import asyncio
 import json
 import os
 import shutil
+import sys
+
+
+def resolve_claude() -> str:
+    """跨平台解析 claude CLI 路径。
+    - Windows: PATH 里有 claude.cmd（包在 .cmd 里的 npm shim）
+    - Linux/macOS: PATH 里有 claude
+    """
+    if sys.platform == "win32":
+        path = shutil.which("claude.cmd") or shutil.which("claude")
+    else:
+        path = shutil.which("claude")
+    if not path:
+        raise FileNotFoundError(
+            "未找到 claude CLI，请先安装 Claude Code 并确保在 PATH 中"
+        )
+    return path
+
 
 async def main():
-    claude_exec = shutil.which("claude") + ".cmd"
+    claude_exec = resolve_claude()
+    print(f"claude_exec: {claude_exec}")
     mcp_config = os.path.abspath(".mcp.json")
 
     cmd = [

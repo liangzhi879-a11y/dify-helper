@@ -3,7 +3,7 @@
     "dify": {
       "command": "python",
       "args": ["-m", "mcp_server"],
-      "cwd": "d:\\Dify Helper"
+      "cwd": "/home/sutai/dify-helper"
     }
   }
 }
