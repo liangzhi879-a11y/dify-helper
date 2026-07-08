@@ -48,14 +48,20 @@ def test_local_fix() -> list[str]:
     failures = []
     src = read_js(LOCAL_JS)
 
-    # 1) 版本号已 bump 到 0.3.2（含 v0.3.1 race condition fix + v0.3.2 Firefox error overlay）
-    failures += assert_contains("local.version", src, "@version      0.3.2")
+    # 1) 版本号已 bump 到 0.3.4（v0.3.1 race + v0.3.2 overlay + v0.3.4 auto-update URL）
+    failures += assert_contains("local.version", src, "@version      0.3.4")
 
     # 2) v0.3.1 race condition 修复说明注释存在
     failures += assert_contains("local.changelog_v031", src, "★ 0.3.1 修复 v0.3.0 启动 race condition")
 
     # 3) v0.3.2 Firefox error overlay 修复说明
     failures += assert_contains("local.changelog_v032", src, "★ 0.3.2 修复 Firefox 上展开按钮闪退")
+
+    # 4) v0.3.4 auto-update URL 配置
+    failures += assert_contains("local.changelog_v034", src, "★ 0.3.4 加 GitHub auto-update URL")
+    failures += assert_contains("local.updateURL", src, "@updateURL    https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window.user.js")
+    failures += assert_contains("local.downloadURL", src, "@downloadURL  https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window.user.js")
+    failures += assert_contains("local.homepageURL", src, "@homepageURL  https://github.com/liangzhi879-a11y/dify-helper")
 
     # 3.5) togglePanel 必须只有 1 个定义（防 0.3.2 remote 翻车的"重复定义 + 缩进错乱"复发）
     #    只数代码中的定义，不数 changelog 注释里提到的字符串
@@ -128,10 +134,14 @@ def test_remote_fix() -> list[str]:
     failures = []
     src = read_js(REMOTE_JS)
 
-    failures += assert_contains("remote.version", src, "@version      0.3.3-remote")
+    failures += assert_contains("remote.version", src, "@version      0.3.4-remote")
 
     # v0.3.3-remote 修复 changelog
     failures += assert_contains("remote.changelog_v033", src, "★ 0.3.3-remote 修复 Firefox 上点 FAB 直接闪退的真根因")
+
+    # v0.3.4-remote auto-update URL
+    failures += assert_contains("remote.changelog_v034", src, "★ 0.3.4-remote 加 GitHub auto-update URL")
+    failures += assert_contains("remote.updateURL", src, "@updateURL    https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window-remote.user.js")
     failures += assert_regex("remote.start_async", src, r"async function start\(\)")
     m = re.search(r"await detectBridge\(\);\s*\n\s*await bootstrap\(\);", src)
     if not m:

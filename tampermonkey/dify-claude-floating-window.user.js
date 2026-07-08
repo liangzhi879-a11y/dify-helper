@@ -1,9 +1,22 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window
 // @namespace    https://github.com/dify-helper
-// @version      0.3.2
+// @version      0.3.4
 // @description  本机 Dify 调试专用版：与本地 bridge 配合，悬浮 Claude CLI
 // @author       dify-helper
+// @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
+// @updateURL    https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window.user.js
+// @downloadURL  https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window.user.js
+// @supportURL   https://github.com/liangzhi879-a11y/dify-helper/issues
+// ★ 0.3.4 加 GitHub auto-update URL：
+//   @homepageURL  → https://github.com/liangzhi879-a11y/dify-helper
+//   @updateURL    → https://raw.githubusercontent.com/.../main/...user.js
+//   @downloadURL  → 同上
+//   @supportURL   → .../issues
+//   Tampermonkey 默认每天检查一次 @version，bump 后用户自动收到更新提示。
+//   零额外发布步骤：git push main → 用户 24h 内弹更新。
+//   验证：浏览器安装本脚本后，看 Tampermonkey 面板 "Updates" 标签
+//         应能看到 "Last checked: ..." + "Latest version: 0.3.4"
 // ★ 0.3.2 修复 Firefox 上展开按钮闪退：
 //   用户报"火狐浏览器闪退，展开按钮显示一下就闪退"，但看不到 console 报错。
 //   修复：

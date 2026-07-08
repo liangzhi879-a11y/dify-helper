@@ -1,11 +1,18 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window (Remote Edition)
 // @namespace    https://github.com/dify-helper
-// @version      0.3.3-remote
+// @version      0.3.4-remote
 // @description  远程访问 Dify 专用版：适配 http://REDACTED_HOST:9980/，桥接服务自动探测
 // @author       dify-helper
+// @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
+// @updateURL    https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window-remote.user.js
+// @downloadURL  https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window-remote.user.js
+// @supportURL   https://github.com/liangzhi879-a11y/dify-helper/issues
 // @match        http://REDACTED_HOST:9980/*
 // @connect      REDACTED_HOST
+// ★ 0.3.4-remote 加 GitHub auto-update URL（与本地版同步）：
+//   @updateURL / @downloadURL 指向 .../main/tampermonkey/...-remote.user.js
+//   区别于本地版：路径带 -remote 后缀，更新时也走 GitHub
 // ★ 0.3.3-remote 修复 Firefox 上点 FAB 直接闪退的真根因：
 //   togglePanel() 在 0.3.2 改动时被错误地写成了两段重复定义（第一段 try { 后
 //   只到 if (state.panelOpen) { 就结束，紧接着又出现 `function togglePanel()`，
