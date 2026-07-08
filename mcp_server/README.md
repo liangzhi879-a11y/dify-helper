@@ -25,7 +25,7 @@ cp mcp_server/.env.example mcp_server/.env
 ```
 
 ```env
-DIFY_CONSOLE_BASE_URL=http://218.17.137.219:9980
+DIFY_CONSOLE_BASE_URL=http://REDACTED_HOST:9980
 DIFY_CONSOLE_TOKEN=your-personal-access-token-here
 ```
 
@@ -51,7 +51,7 @@ claude mcp add dify -- python -m mcp_server
 
 ```bash
 claude mcp add dify \
-  --env DIFY_CONSOLE_BASE_URL=http://218.17.137.219:9980 \
+  --env DIFY_CONSOLE_BASE_URL=http://REDACTED_HOST:9980 \
   --env DIFY_CONSOLE_TOKEN=<your-token> \
   -- python -m mcp_server
 ```
@@ -67,7 +67,7 @@ claude mcp add dify \
       "command": "python",
       "args": ["-m", "mcp_server"],
       "env": {
-        "DIFY_CONSOLE_BASE_URL": "http://218.17.137.219:9980",
+        "DIFY_CONSOLE_BASE_URL": "http://REDACTED_HOST:9980",
         "DIFY_CONSOLE_TOKEN": "your-personal-access-token-here"
       }
     }

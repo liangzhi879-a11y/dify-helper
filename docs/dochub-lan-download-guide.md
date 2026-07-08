@@ -12,8 +12,8 @@
 | URL | 鉴权 | 适用场景 | 来源 |
 |---|---|---|---|
 | `http://127.0.0.1:8088/api/v1/files/download?path=<b64>` | Header `X-API-Key: dk_default_test_key` | 本机 / docker 内 curl | DocHub 容器 8088→8080 端口映射 |
-| `http://192.168.3.243:8088/api/v1/files/download?path=<b64>` | Header `X-API-Key: dk_default_test_key` | LAN 设备直连 DocHub 容器 | 同上 |
-| **`http://192.168.3.243/dochub-files/download?path=<b64>`** | **无需 Key**（nginx 自动注入） | **LAN 设备、移动设备、浏览器（推荐）** | docker-nginx-1 反代 `/dochub-files/` |
+| `http://192.168.x.x:8088/api/v1/files/download?path=<b64>` | Header `X-API-Key: dk_default_test_key` | LAN 设备直连 DocHub 容器 | 同上 |
+| **`http://192.168.x.x/dochub-files/download?path=<b64>`** | **无需 Key**（nginx 自动注入） | **LAN 设备、移动设备、浏览器（推荐）** | docker-nginx-1 反代 `/dochub-files/` |
 
 > 第 3 条是 LAN 内最常用的入口。无需 API key，浏览器直接打开就能下载 docx。
 
@@ -39,7 +39,7 @@ $ echo 'L2FwcC9kYXRhL2dlbmVyYXRlZC90ZW5hbnRfZGVmYXVsdC9SRl90ZW1wX3Rlc3RfMjAyNjA3
 直接在 LAN 设备的浏览器地址栏粘贴：
 
 ```
-http://192.168.3.243/dochub-files/download?path=L2FwcC9kYXRhL2dlbmVyYXRlZC90ZW5hbnRfZGVmYXVsdC9SRF90ZW1wX3Rlc3RfMjAyNjA3MDUyMzUxMjIuZG9jeA==
+http://192.168.x.x/dochub-files/download?path=L2FwcC9kYXRhL2dlbmVyYXRlZC90ZW5hbnRfZGVmYXVsdC9SRF90ZW1wX3Rlc3RfMjAyNjA3MDUyMzUxMjIuZG9jeA==
 ```
 
 → 浏览器自动下载 `RD_temp_test_20260705235122.docx`。
@@ -48,7 +48,7 @@ http://192.168.3.243/dochub-files/download?path=L2FwcC9kYXRhL2dlbmVyYXRlZC90ZW5h
 
 ```bash
 # LAN 反代（无需 Key）
-curl -OJ "http://192.168.3.243/dochub-files/download?path=L2FwcC9kYXRhL2dlbmVyYXRlZC90ZW5hbnRfZGVmYXVsdC9SRF90ZW1wX3Rlc3RfMjAyNjA3MDUyMzUxMjIuZG9jeA=="
+curl -OJ "http://192.168.x.x/dochub-files/download?path=L2FwcC9kYXRhL2dlbmVyYXRlZC90ZW5hbnRfZGVmYXVsdC9SRF90ZW1wX3Rlc3RfMjAyNjA3MDUyMzUxMjIuZG9jeA=="
 
 # 本机直连（需要 X-API-Key）
 curl -OJ -H "X-API-Key: dk_default_test_key" \
@@ -66,7 +66,7 @@ PATH_B64 = "L2FwcC9kYXRhL2dlbmVyYXRlZC90ZW5hbnRfZGVmYXVsdC9SRF90ZW1wX3Rlc3RfMjAy
 
 # LAN 反代
 resp = requests.get(
-    f"http://192.168.3.243/dochub-files/download?path={PATH_B64}",
+    f"http://192.168.x.x/dochub-files/download?path={PATH_B64}",
     timeout=60,
 )
 resp.raise_for_status()
@@ -78,7 +78,7 @@ print(f"Downloaded {len(resp.content)} bytes")
 ### 3.4 wget
 
 ```bash
-wget "http://192.168.3.243/dochub-files/download?path=L2FwcC9kYXRhL2dlbmVyYXRlZC90ZW5hbnRfZGVmYXVsdC9SRF90ZW1wX3Rlc3RfMjAyNjA3MDUyMzUxMjIuZG9jeA=="
+wget "http://192.168.x.x/dochub-files/download?path=L2FwcC9kYXRhL2dlbmVyYXRlZC90ZW5hbnRfZGVmYXVsdC9SRF90ZW1wX3Rlc3RfMjAyNjA3MDUyMzUxMjIuZG9jeA=="
 ```
 
 ## 4. 如何从 workflow 输出里提取所有文档 URL
@@ -101,7 +101,7 @@ wget "http://192.168.3.243/dochub-files/download?path=L2FwcC9kYXRhL2dlbmVyYXRlZC
 ...
 ```
 
-把 path 抠出来，拼到 `http://192.168.3.243/dochub-files/download?path=` 后面就行。
+把 path 抠出来，拼到 `http://192.168.x.x/dochub-files/download?path=` 后面就行。
 
 ### 批量下载（Python 模板）
 
@@ -119,7 +119,7 @@ urls = re.findall(r'\*\*(\w+)\*\*: /api/v1/files/download\?path=(\S+)', TASK_SUM
 
 for rd_code, path_b64 in urls:
     resp = requests.get(
-        f"http://192.168.3.243/dochub-files/download?path={path_b64}",
+        f"http://192.168.x.x/dochub-files/download?path={path_b64}",
         timeout=60,
     )
     resp.raise_for_status()
@@ -134,7 +134,7 @@ for rd_code, path_b64 in urls:
 ```
 ┌──────────────────┐         ┌──────────────────┐         ┌──────────────────┐
 │  LAN 客户端       │ ──────> │  docker-nginx-1  │ ──────> │  docker-dochub    │
-│  (192.168.3.x)   │  :80    │  192.168.3.243   │  8080   │  (容器, 默认       │
+│  (192.168.3.x)   │  :80    │  192.168.x.x   │  8080   │  (容器, 默认       │
 │                  │         │  自动注入 X-API-Key│        │   0.0.0.0:8080)   │
 └──────────────────┘         └──────────────────┘         └──────────────────┘
                                        │
@@ -146,8 +146,8 @@ for rd_code, path_b64 in urls:
 ```
 
 - `docker-nginx-1` 在 `docker_default` 网络 → 能 DNS 解析 `dochub-app`
-- `dochub-app` 端口 `0.0.0.0:8088→8080` 已映射到 host (`192.168.3.243:8088`)
-- `docker-nginx-1` 端口 `0.0.0.0:80→80` + `0.0.0.0:443→443` 已映射到 host (`192.168.3.243:80/443`)
+- `dochub-app` 端口 `0.0.0.0:8088→8080` 已映射到 host (`192.168.x.x:8088`)
+- `docker-nginx-1` 端口 `0.0.0.0:80→80` + `0.0.0.0:443→443` 已映射到 host (`192.168.x.x:80/443`)
 
 ## 6. nginx 配置（已就绪，无需修改）
 
@@ -190,8 +190,8 @@ location /dochub-files/ {
 
 | 路由 | HTTP | 字节数 | sha256 | magic bytes |
 |---|---|---|---|---|
-| `http://192.168.3.243:8088/api/v1/files/download?path=<b64>` (X-API-Key) | 200 | 38986 | `0aa727e4c947c0330290142299f879f1d9663a5b9cadbe4fb7640787c9bf21c7` | `504b0304` (ZIP/DOCX) |
-| `http://192.168.3.243/dochub-files/download?path=<b64>` (无 Key) | 200 | 38986 | `0aa727e4c947c0330290142299f879f1d9663a5b9cadbe4fb7640787c9bf21c7` | `504b0304` (ZIP/DOCX) |
+| `http://192.168.x.x:8088/api/v1/files/download?path=<b64>` (X-API-Key) | 200 | 38986 | `0aa727e4c947c0330290142299f879f1d9663a5b9cadbe4fb7640787c9bf21c7` | `504b0304` (ZIP/DOCX) |
+| `http://192.168.x.x/dochub-files/download?path=<b64>` (无 Key) | 200 | 38986 | `0aa727e4c947c0330290142299f879f1d9663a5b9cadbe4fb7640787c9bf21c7` | `504b0304` (ZIP/DOCX) |
 
 **两条路径下载到字节级一致的 docx → 反代正确工作**。
 

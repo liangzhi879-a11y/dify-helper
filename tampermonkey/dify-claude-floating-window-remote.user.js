@@ -2,10 +2,10 @@
 // @name         Dify Claude Floating Window (Remote Edition)
 // @namespace    https://github.com/dify-helper
 // @version      0.3.3-remote
-// @description  远程访问 Dify 专用版：适配 http://218.17.137.219:9980/，桥接服务自动探测
+// @description  远程访问 Dify 专用版：适配 http://REDACTED_HOST:9980/，桥接服务自动探测
 // @author       dify-helper
-// @match        http://218.17.137.219:9980/*
-// @connect      218.17.137.219
+// @match        http://REDACTED_HOST:9980/*
+// @connect      REDACTED_HOST
 // ★ 0.3.3-remote 修复 Firefox 上点 FAB 直接闪退的真根因：
 //   togglePanel() 在 0.3.2 改动时被错误地写成了两段重复定义（第一段 try { 后
 //   只到 if (state.panelOpen) { 就结束，紧接着又出现 `function togglePanel()`，
@@ -35,7 +35,7 @@
 //   显示：标题栏新增 👤 badge，点击弹 display_name popover（列 candidates + 新建）。
 // ★ 0.2.22 SSE 切换为 HTTP 轮询（修复 remote 端事件丢失）：
 //   之前用 GM_xmlhttpRequest 订阅 /sessions/{id}/events （SSE 流）。在 remote
-//   场景（218.17.137.219:8002 经过路由器端口转发）下，SSE chunk 在中途被
+//   场景（REDACTED_HOST:8002 经过路由器端口转发）下，SSE chunk 在中途被
 //   路由器/防火墙 buffer、合并、或截断，导致 onprogress 只触发一两次、
 //   整段响应堆到最后才到 ——"Dify Claude助手" 面板里看不到实时思考和文字气泡。
 //   Bridge 后端**已经内置了 polling 备选**（GET /sessions/{id}/events/poll
@@ -177,13 +177,13 @@
   // ============================================================
   // 远程访问版配置
   // ============================================================
-  // 服务器：192.168.3.243（局域网）/ 218.17.137.219（公网，需路由器转发）
+  // 服务器：192.168.x.x（局域网）/ REDACTED_HOST（公网，需路由器转发）
   // Dify 实际监听 nginx 80 端口；外部 9980 是路由器转发后的端口
   // Bridge 监听 8002（避开 8000 vllm / 8001 bge-m3）
   //
   // 你需要在 OpenWrt 路由器（http://192.168.3.1）配置 2 条端口转发：
-  //   外部 9980 → 192.168.3.243:80      （Dify Web）
-  //   外部 8002 → 192.168.3.243:8002    （Bridge API）
+  //   外部 9980 → 192.168.x.x:80      （Dify Web）
+  //   外部 8002 → 192.168.x.x:8002    （Bridge API）
   //
   // 【模型锁定】强制使用 MiniMax-M3（与本仓库开发者当前使用的一致）
   //   - 不要擅自切换模型；未授权的模型无法正常使用
@@ -193,8 +193,8 @@
   // 候选 BRIDGE_URL 列表（按优先级探测）
   // 远程访问场景下首选公网地址，本地/同网段访问也能 fallback
   const BRIDGE_CANDIDATES = [
-    "http://218.17.137.219:8002",   // 远程访问（推荐）
-    "http://192.168.3.243:8002",    // 同网段
+    "http://REDACTED_HOST:8002",   // 远程访问（推荐）
+    "http://192.168.x.x:8002",    // 同网段
     "http://127.0.0.1:8002",        // 本机 loopback
     "http://localhost:8002",        // 本机 loopback 备选
   ];
@@ -3329,7 +3329,7 @@
     } else if (failCount === probes.length) {
       lines.push("  所有候选地址都失败。常见原因：");
       lines.push("  - 公司/网络防火墙封锁 8002 端口");
-      lines.push("  - 路由器未配置公网 8002 → 192.168.3.243:8002 端口转发");
+      lines.push("  - 路由器未配置公网 8002 → 192.168.x.x:8002 端口转发");
       lines.push("  - 不在办公室 LAN 内（192.168.3.x）且无法访问公网 IP");
       lines.push("  - Bridge 服务未启动（检查 ssh server 'systemctl status dify-bridge'）");
     } else if (okCount > 0) {

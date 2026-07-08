@@ -10,7 +10,7 @@
 - **操作系统**：Linux（推荐 Ubuntu 22.04+）或 Windows Server
 - **Python**：3.10+（推荐 3.12）
 - **Node.js**：18+（Dify 实例本身需要）
-- **网络**：Dify 实例（http://218.17.137.219:9980）可达
+- **网络**：Dify 实例（http://REDACTED_HOST:9980）可达
 - **端口**：8001（Bridge 服务）需对外开放
 
 ### Claude Code CLI
@@ -20,8 +20,8 @@
 
 ### Dify 实例
 - **版本**：1.14.2+
-- **访问**：http://218.17.137.219:9980 可达
-- **凭据**：有效邮箱密码（9062656286@qq.com）
+- **访问**：http://REDACTED_HOST:9980 可达
+- **凭据**：有效邮箱密码（REDACTED_EMAIL@example.com）
 - **验证**：浏览器能登录并看到应用列表
 
 ### 浏览器侧
@@ -44,7 +44,7 @@ cd dify-helper
 ```bash
 # 从开发机同步到服务器
 rsync -avz --exclude '.venv' --exclude '__pycache__' --exclude '.pytest_cache' \
-  "d:/Dify Helper/" user@218.17.137.219:/opt/dify-helper/
+  "d:/Dify Helper/" user@REDACTED_HOST:/opt/dify-helper/
 ```
 
 ### 方式 C：scp 打包传输
@@ -54,10 +54,10 @@ cd "d:/Dify Helper"
 tar -czf dify-helper.tar.gz --exclude='.venv' --exclude='__pycache__' --exclude='.pytest_cache' .
 
 # 传输
-scp dify-helper.tar.gz user@218.17.137.219:/opt/
+scp dify-helper.tar.gz user@REDACTED_HOST:/opt/
 
 # 服务器解压
-ssh user@218.17.137.219
+ssh user@REDACTED_HOST
 cd /opt
 mkdir -p dify-helper && cd dify-helper
 tar -xzf /opt/dify-helper.tar.gz
@@ -97,8 +97,8 @@ python -c "from mcp_server.server import mcp; print('mcp ok')"
 
 ### 4.1 mcp_server/.env
 ```ini
-DIFY_CONSOLE_BASE_URL=http://218.17.137.219:9980
-DIFY_EMAIL=9062656286@qq.com
+DIFY_CONSOLE_BASE_URL=http://REDACTED_HOST:9980
+DIFY_EMAIL=REDACTED_EMAIL@example.com
 DIFY_PASSWORD=<base64编码后的密码>
 # 或直接用 token（可选）
 # DIFY_CONSOLE_TOKEN=<access_token>
@@ -188,7 +188,7 @@ netsh advfirewall firewall add rule name="Dify Bridge 8001" dir=in action=allow 
 ### 验证外部可达
 ```bash
 # 从 Dify 服务器或本地浏览器访问
-curl http://218.17.137.219:8001/health
+curl http://REDACTED_HOST:8001/health
 ```
 
 ---
@@ -211,8 +211,8 @@ curl http://218.17.137.219:8001/health
 脚本头部已硬编码：
 ```javascript
 const CONFIG = {
-  BRIDGE_URL: "http://218.17.137.219:8001",
-  DIFY_URL: "http://218.17.137.219:9980",
+  BRIDGE_URL: "http://REDACTED_HOST:8001",
+  DIFY_URL: "http://REDACTED_HOST:9980",
   ...
 };
 ```
@@ -220,7 +220,7 @@ const CONFIG = {
 若 Bridge 部署在其他地址，修改 `BRIDGE_URL` 后保存。
 
 ### 7.4 @connect 声明
-脚本已声明 `@connect 218.17.137.219`，Tampermonkey 会允许向该域名发起 `GM_xmlhttpRequest`。若 Bridge 部署在其他域名，需同步修改 `@connect`。
+脚本已声明 `@connect REDACTED_HOST`，Tampermonkey 会允许向该域名发起 `GM_xmlhttpRequest`。若 Bridge 部署在其他域名，需同步修改 `@connect`。
 
 ---
 
@@ -229,20 +229,20 @@ const CONFIG = {
 ### 8.1 服务端验证
 ```bash
 # 1. Bridge 健康
-curl http://218.17.137.219:8001/health
+curl http://REDACTED_HOST:8001/health
 # 预期：{"status":"ok"}
 
 # 2. Dify 认证
-curl http://218.17.137.219:8001/dify/apps
+curl http://REDACTED_HOST:8001/dify/apps
 # 预期：{"apps":{"data":[...]},"ok":true}
 
 # 3. 会话创建
-curl -X POST http://218.17.137.219:8001/sessions -H "Content-Type: application/json" -d '{}'
+curl -X POST http://REDACTED_HOST:8001/sessions -H "Content-Type: application/json" -d '{}'
 # 预期：{"session_id":"...","status":"idle"}
 ```
 
 ### 8.2 浏览器验证
-1. 访问 http://218.17.137.219:9980/apps
+1. 访问 http://REDACTED_HOST:9980/apps
 2. 预期：右下角出现 💬 悬浮按钮
 3. 点击展开 → 切换到"对话"Tab
 4. 输入"你好" → 预期收到 Claude 流式回复
@@ -283,9 +283,9 @@ netstat -ano | findstr 8001  # Windows
 ```
 
 ### Q2: 悬浮窗显示"无法连接 bridge 服务"
-1. 检查 Bridge 是否运行：`curl http://218.17.137.219:8001/health`
+1. 检查 Bridge 是否运行：`curl http://REDACTED_HOST:8001/health`
 2. 检查防火墙是否开放 8001
-3. 检查 Tampermonkey `@connect` 是否含 `218.17.137.219`
+3. 检查 Tampermonkey `@connect` 是否含 `REDACTED_HOST`
 4. 检查脚本 `CONFIG.BRIDGE_URL` 是否正确
 
 ### Q3: SSE 流被 Nginx 超时切断
@@ -312,7 +312,7 @@ location /sessions/ {
 1. 检查 `mcp_server/.env` 的 `DIFY_EMAIL` / `DIFY_PASSWORD` 是否正确
 2. 密码需 base64 编码：`echo -n 'pwd' | base64`
 3. 运行 `python tests/test_auth.py` 验证认证
-4. 检查 Dify 实例是否可访问：`curl http://218.17.137.219:9980`
+4. 检查 Dify 实例是否可访问：`curl http://REDACTED_HOST:9980`
 
 ### Q6: 悬浮窗 SPA 切页后消失
 - 脚本已用 `MutationObserver` + `history.pushState` 劫持处理
@@ -436,7 +436,7 @@ sudo systemctl restart dify-bridge
 
 1. **8001 端口暴露**：Bridge 无认证，任何能访问 8001 的人都能创建会话调用 Claude
    - 生产环境建议加 Nginx Basic Auth 或 IP 白名单
-   - 或用 SSH 隧道：`ssh -L 8001:localhost:8001 user@218.17.137.219`
+   - 或用 SSH 隧道：`ssh -L 8001:localhost:8001 user@REDACTED_HOST`
 
 2. **Dify 凭据**：`mcp_server/.env` 含邮箱密码，文件权限设为 600
    ```bash
@@ -447,7 +447,7 @@ sudo systemctl restart dify-bridge
    - 仅在受控服务器部署
    - 限制服务器 SSH 访问权限
 
-4. **CORS**：Bridge 已配置允许 `http://218.17.137.219:9980`
+4. **CORS**：Bridge 已配置允许 `http://REDACTED_HOST:9980`
    - 生产环境建议收紧为具体路径
 
 5. **Tampermonkey 脚本来源**：仅安装来自可信来源的脚本

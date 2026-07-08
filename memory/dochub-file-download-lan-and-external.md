@@ -18,8 +18,8 @@ base64 解码后是容器内路径：`/app/data/generated/tenant_default/RD_temp
 | URL | 鉴权 | 何时用 |
 |---|---|---|
 | `http://127.0.0.1:8088/api/v1/files/download?path=<b64>` | Header `X-API-Key: dk_default_test_key` | 本机调试 / docker 内 curl |
-| `http://192.168.3.243:8088/api/v1/files/download?path=<b64>` | Header `X-API-Key: dk_default_test_key` | LAN 直连 DocHub 容器 8088→8080 映射 |
-| `http://192.168.3.243/dochub-files/download?path=<b64>` | **无需 Key**（Dify nginx 自动注入） | LAN 外部客户端 / 移动设备 / 浏览器 |
+| `http://192.168.x.x:8088/api/v1/files/download?path=<b64>` | Header `X-API-Key: dk_default_test_key` | LAN 直连 DocHub 容器 8088→8080 映射 |
+| `http://192.168.x.x/dochub-files/download?path=<b64>` | **无需 Key**（Dify nginx 自动注入） | LAN 外部客户端 / 移动设备 / 浏览器 |
 
 第 3 条路径配置在 `docker-nginx-1 /etc/nginx/conf.d/default.conf`（2026-07-05 加）：
 ```nginx

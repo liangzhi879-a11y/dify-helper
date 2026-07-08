@@ -53,8 +53,8 @@ docker exec docker-nginx-1 nginx -s reload       # 热加载, 不重启容器
 
 ### 验证清单
 1. ✅ 内部 `http://127.0.0.1/api/v1/files/download?path=<b64>` → HTTP 200 + OOXML
-2. ✅ LAN `http://192.168.3.243/api/v1/files/download?path=<b64>` → HTTP 200 (路由器 NAT 后)
-3. ✅ 公网 `http://218.17.137.219:9980/api/v1/files/download?path=<b64>` → HTTP 200 (外部设备访问)
+2. ✅ LAN `http://192.168.x.x/api/v1/files/download?path=<b64>` → HTTP 200 (路由器 NAT 后)
+3. ✅ 公网 `http://REDACTED_HOST:9980/api/v1/files/download?path=<b64>` → HTTP 200 (外部设备访问)
 4. ✅ 字节级 SHA256 一致 (3 个反代路径拿到同一份 docx)
 5. ✅ Dify UI `/apps` 不受影响 (HTTP 200, 391898 bytes)
 6. ✅ Dify API `/api/setup` 不被劫持 (404 是 Dify 端点本身不存在, 不会走到 PATCH 32)

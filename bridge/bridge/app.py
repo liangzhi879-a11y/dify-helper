@@ -105,9 +105,9 @@ app.add_middleware(
         "http://127.0.0.1",
         "http://localhost",
         # LAN IP（同网段其他电脑访问 Dify）
-        "http://192.168.3.243",
+        "http://192.168.x.x",
         # 公网 IP（外网访问，需路由器配端口转发）
-        "http://218.17.137.219",
+        "http://REDACTED_HOST",
         # 开发环境常见端口
         "http://127.0.0.1:3000",
         "http://localhost:3000",

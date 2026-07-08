@@ -72,7 +72,7 @@
 
 - **Python** 3.10+
 - **Claude Code CLI** v2.1.187+（已登录并配置模型）
-- **Dify 实例** 1.14+（如 `http://218.17.137.219:9980`）
+- **Dify 实例** 1.14+（如 `http://REDACTED_HOST:9980`）
 - **Tampermonkey 浏览器扩展**（用于悬浮窗）
 
 ### 第 1 步：克隆并安装
@@ -137,7 +137,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8001
 1. 浏览器安装 [Tampermonkey](https://www.tampermonkey.net/) 扩展
 2. Tampermonkey 仪表盘 → 新建脚本
 3. 粘贴 `tampermonkey/dify-claude-floating-window.user.js` 全文 → 保存
-4. 访问你的 Dify 实例（如 `http://218.17.137.219:9980/apps`）
+4. 访问你的 Dify 实例（如 `http://REDACTED_HOST:9980/apps`）
 5. 右下角应出现 💬 悬浮按钮，点击展开即可与 Claude 对话
 
 ### 第 6 步：验证

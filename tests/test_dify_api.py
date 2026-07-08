@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv("mcp_server/.env")
 from mcp_server.dify_client import DifyClient, DifyApiError
 
-BASE_URL = os.getenv("DIFY_CONSOLE_BASE_URL", "http://218.17.137.219:9980")
+BASE_URL = os.getenv("DIFY_CONSOLE_BASE_URL", "http://REDACTED_HOST:9980")
 TOKEN = os.getenv("DIFY_CONSOLE_TOKEN", "")
 
 async def test_connectivity():

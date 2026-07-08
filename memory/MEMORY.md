@@ -26,7 +26,7 @@
 - [Dify DocHub template_id 必须 UUID 硬编码](dify-dochub-template-id-must-be-uuid.md) — tool 节点的 template_id 不解析 env var 也不接文件名；tool_configurations + tool_parameters 两处都要写 UUID；模板验证用 docker network 内 curl + X-API-Key header
 - [Dify LLM QC 节点硬约束→软化 (PATCH 28)](dify-qc-strict-passed-fails-everything.md) — "硬约束必须全部满足" 让通过率 0/6；改 "参考标准 4/3 通过 + 兜底原文保留" → 5/7；改 1 QC 节点实际影响全部 3 QC
 - [Dify 3 QC 节点必须同时软化 (PATCH 29)](dify-qc-3node-soften-at-once.md) — m2.7 LLM 跨节点风格耦合，单 QC 软化卡 71%，3 QC 同时软化才能 100%；max_tokens 8000→12000 给 thinking + JSON 留余量
-- [DocHub 文档 3 条下载路径 + nginx 反代](dochub-file-download-lan-and-external.md) — LAN 直连 192.168.3.243:8088 + Dify nginx /dochub-files/ 反代（自动注入 X-API-Key）+ 公网 4 种方案选型
+- [DocHub 文档 3 条下载路径 + nginx 反代](dochub-file-download-lan-and-external.md) — LAN 直连 192.168.x.x:8088 + Dify nginx /dochub-files/ 反代（自动注入 X-API-Key）+ 公网 4 种方案选型
 - [Nginx /api/v1/files/ 反代修复 DocHub 公网下载](nginx-dochub-api-v1-files-reverse-proxy.md) — DocHub 返回 downloadUrl 是相对路径，浏览器拼 host 直击 /api/v1/files/download；nginx 加 ^~ /api/v1/files/ location + 自动注入 X-API-Key，公网 9980/LAN 80/容器外全部通
 - [Dify {{#xxx#}} 是 regex 不是 jinja2，无 fallback filter](dify-break-conditions-jinja-no-fallback.md) — break_conditions.value 引不存在的变量时渲染为字面量字符串，processor 报 "Cannot convert 'sys.xxx' to number"；必须用 conversation_variable (有 default) 兜底，不能用 jinja2 |default filter
 - [Dify conversation_variable 1.14+ UI 不可改，用 env_variable](dify-conversation-variable-not-ui-editable.md) — conversation_variable 在 Dify 1.14+ 是 internal schema，user 在 UI 上没法编辑；要让 user 在 workflow 设置改值，必须用 environment_variable（顶部 Env Panel 可改）

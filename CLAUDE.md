@@ -16,7 +16,7 @@
 | Bridge 服务端口 | **8002** | 部署时改了（避开 vllm 占用的 8000），不是 `config.py` 默认 8000 |
 | vllm | 8000 | 占用，不要让 bridge 撞上去 |
 | bge-m3 embedding | 8001 | 参考 [[dify-bridge-deployment]] |
-| Dify 实例 | `http://127.0.0.1/` | nginx 80 端口，`http://218.17.137.219:9980` 不可用 |
+| Dify 实例 | `http://127.0.0.1/` | nginx 80 端口，`http://REDACTED_HOST:9980` 不可用 |
 
 ## 项目结构
 
@@ -158,7 +158,7 @@
 
 - URL: `http://127.0.0.1/`（nginx 80）
 - API 前缀: `/console/api`
-- 认证：邮箱密码自动登录（9062656286@qq.com，凭据在 `mcp_server/.env`）
+- 认证：邮箱密码自动登录（REDACTED_EMAIL@example.com，凭据在 `mcp_server/.env`）
 - 可用 MCP 工具：`mcp__dify__*` 共 41 个（分类见上表）
 - Bridge 服务：`http://127.0.0.1:8002`（SSE 会话 + 一次性任务 + **21 个端点**，含 4 个 Phase C 诊断端点）
 
