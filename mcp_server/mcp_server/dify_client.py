@@ -11,6 +11,7 @@ base_url 内部拼接 `/console/api` 前缀。超时 30 秒，网络错误与 5x
 from __future__ import annotations
 
 import asyncio
+import os
 from typing import Any
 
 import httpx
@@ -226,6 +227,9 @@ class DifyClient:
         - 401：若有 refresh_token 或邮箱密码，自动 refresh/重新登录后重试一次
         - 4xx（非401）：立即抛出 DifyApiError（不重试）
         - 5xx 或 httpx 网络错误：指数退避重试，最多 MAX_RETRIES 次
+
+        环境变量 DIFY_WORKSPACE_ID 非空时，自动注入 ?workspace_id= 给所有请求
+        （多 workspace 环境下指定目标 workspace，不影响创建端点，它们以 token 为准）。
         """
         # 邮箱密码模式：确保已登录
         if self.email and self.password:
@@ -233,7 +237,18 @@ class DifyClient:
 
         url = f"{self._api_base}{path}"
         # 允许调用方覆盖默认 headers
-        headers = {**self._headers, **kwargs.pop("headers", {})}
+        # ★ 修复：保存 caller_headers 到局部变量，401 refresh 后用同一份重建 headers，
+        # 否则 kwargs.get("headers") 在第一次 pop 后永远拿空 dict，caller 自定义头丢失
+        caller_headers = kwargs.pop("headers", None)
+        headers = {**self._headers, **(caller_headers or {})}
+
+        # ★ 新增：多 workspace 支持。环境变量非空时给所有请求追加 ?workspace_id=。
+        # 创建端点忽略此参数（后端以 token 隐含 workspace 为准），list/get 端点用来过滤。
+        wid = os.getenv("DIFY_WORKSPACE_ID", "").strip()
+        if wid:
+            params = kwargs.get("params") or {}
+            if isinstance(params, dict) and "workspace_id" not in params:
+                kwargs["params"] = {**params, "workspace_id": wid}
 
         attempt = 0
         retried_401 = False
@@ -263,7 +278,8 @@ class DifyClient:
                     retried_401 = True
                     try:
                         await self._refresh_access_token()
-                        headers = {**self._headers, **kwargs.get("headers", {})}
+                        # ★ 修复：用 caller_headers 局部变量（已被 pop），不是 kwargs.get("headers")
+                        headers = {**self._headers, **(caller_headers or {})}
                         attempt = 0  # 重置重试计数
                         continue
                     except DifyApiError:
