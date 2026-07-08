@@ -1,19 +1,27 @@
 // ==UserScript==
-// @name         Dify Claude Floating Window
+// @name         Dify Claude Floating Window (Remote Edition)
 // @namespace    https://github.com/dify-helper
-// @version      0.3.2
-// @description  本机 Dify 调试专用版：与本地 bridge 配合，悬浮 Claude CLI
+// @version      0.3.3-remote
+// @description  远程访问 Dify 专用版：适配 http://218.17.137.219:9980/，桥接服务自动探测
 // @author       dify-helper
-// ★ 0.3.2 修复 Firefox 上展开按钮闪退：
-//   用户报"火狐浏览器闪退，展开按钮显示一下就闪退"，但看不到 console 报错。
-//   修复：
-//   1) window 全局 error + unhandledrejection 监听，把异常记录到 FAB title + 屏幕
-//      顶部 overlay（点 overlay 关闭），用户不开 F12 也能看到根因
-//   2) togglePanel 全函数 try/catch — 防御 shadow DOM adoption / getElementById
-//      返回 null 时 throw 把整个 FAB click handler 吞掉
-//   3) 防御性 panel/fab 元素存在检查，缺失时显示明确错误而不是 silently fail
-// ★ 0.3.1 修复 v0.3.0 启动 race condition 导致 badge 永远 👤?：
-// ★ 0.3.0 多用户隔离（对应 bridge v0.3.0）：
+// @match        http://218.17.137.219:9980/*
+// @connect      218.17.137.219
+// ★ 0.3.3-remote 修复 Firefox 上点 FAB 直接闪退的真根因：
+//   togglePanel() 在 0.3.2 改动时被错误地写成了两段重复定义（第一段 try { 后
+//   只到 if (state.panelOpen) { 就结束，紧接着又出现 `function togglePanel()`，
+//   第二个缺 try/{} 包裹 + 缩进错乱），整个 IIFE eval 抛 SyntaxError。
+//   解：把 togglePanel 替换为单一定义（与本地版一致）。
+// ★ 0.3.2-remote 修复 Firefox 上展开按钮闪退（与本地版同步）：
+//   1) window 全局 error + unhandledrejection 监听 → FAB title + 屏幕顶部 overlay
+//   2) togglePanel 全函数 try/catch 防御 shadow DOM adoption 异常
+// ★ 0.3.1-remote 修复 v0.3.0 启动 race condition 导致 badge 永远 👤?：
+//   start() 同步路径里调 bootstrap()，但 bootstrap 读 state.bridgeProbes.find(p =>
+//   p.status === "ok")，而 detectBridge 还在 async loop（state 全 pending），find
+//   返回 undefined → bootstrap early-return → /auth/whoami 永远不调 → fingerprint
+//   永远 null → 用户报"无指纹"。修复：start() 改 async，await detectBridge() 后再
+//   await bootstrap()，并把顶层的 detectBridge() fire-and-forget 调用注释掉。
+//   附带：setDisplayName / clearDisplayName 用 try/catch 包 addSystemMessage。
+// ★ 0.3.0-remote 多用户隔离（与本地版同步，对应 bridge v0.3.0）：
 //   升级为内部团队多用户共存，单一指纹 = (ip+UA+lang) HMAC-SHA256 → uuid5。
 //   三大改造：
 //     1) bootstrap /auth/whoami — 启动时拿 fingerprint + user_id + display_name
@@ -447,10 +455,10 @@
   }
 
   // 立即启动探测（不等完成，后台并发 — 仅供 UI 提前显示"探测中"）
-  // ★ 0.3.1: 关键修复 — 移除此 fire-and-forget 调用。bootstrap() 现在在 start()
-  //   内部 await detectBridge() 之后跑，避免 bootstrap 读到 state.bridgeProbes 全
-  //   pending 而 early-return，导致 /auth/whoami 永远不调、fingerprint 永远为空、
-  //   badge 一直显示 👤?。注释里"时序安全"的承诺原本就不成立。
+  // ★ 0.3.1-remote: 关键修复 — 移除此 fire-and-forget 调用。bootstrap() 现在在
+  //   start() 内部 await detectBridge() 之后跑，避免 bootstrap 读到 state.bridgeProbes
+  //   全 pending 而 early-return，导致 /auth/whoami 永远不调、fingerprint 永远为空、
+  //   badge 一直显示 👤?。
   // detectBridge();
 
   // 斜杠指令数据驱动分组
@@ -824,20 +832,17 @@
     //   Panel 关闭改由 FAB 唯一控制 + titlebar 新增 ✕ 按钮（Fix 7）。
   }
 
-  // ★ 0.3.2: 全局错误兜底 — 用户报"Firefox 展开按钮闪退"但看不到 console。
+  // ★ 0.3.2-remote: 全局错误兜底 — 用户报"Firefox 展开按钮闪退"但看不到 console。
   //   在 FAB title + 一个小 overlay 双重显示最近未捕获错误，开不开 F12 都能看到根因。
-  //   overlay 是 hostEl 的 sibling div，绝对定位覆盖在屏幕中央，z-index 比 Dify 高。
   let _fatalErrors = [];
   function _recordFatal(scope, err) {
     const msg = (err && (err.stack || err.message)) || String(err);
     _fatalErrors.push({ scope, msg, t: Date.now() });
     if (_fatalErrors.length > 5) _fatalErrors.shift();
-    // 在 FAB title 显示
     try {
       const fab = shadowRoot && shadowRoot.getElementById("dcfw-fab");
       if (fab) fab.title = "⚠ 错误 (" + scope + "): " + msg.slice(0, 200) + "\n\n完整错误请开 F12 console";
     } catch (_) {}
-    // 显示 overlay
     try { _showFatalOverlay(); } catch (_) {}
     console.error("[bridge] FATAL " + scope + ":", err);
   }
@@ -863,7 +868,6 @@
     ).join("\n\n---\n\n") + "\n\n(点此关闭)";
     overlay.onclick = () => overlay.remove();
   }
-  // 注册全局错误捕获（必须在 injectUI 之前就生效，所以放在模块顶层）
   window.addEventListener("error", (e) => {
     if (e && e.error) _recordFatal("window.error", e.error);
     else if (e && e.message) _recordFatal("window.error", new Error(e.message));
@@ -873,7 +877,7 @@
   });
 
   function togglePanel() {
-    // ★ 0.3.2: 全函数 try/catch — Firefox 上点 FAB 直接闪退的根因之一（shadow DOM
+    // ★ 0.3.2-remote: 全函数 try/catch — Firefox 上点 FAB 直接闪退的根因之一（shadow DOM
     //   adoption / getElementById 在某些场景返回 null 时 throw）。
     try {
       state.panelOpen = !state.panelOpen;
@@ -1864,8 +1868,7 @@
       toggleUserPopover(false);
       const badge = shadowRoot && shadowRoot.getElementById("dcfw-user-badge");
       if (badge) badge.classList.remove("collision");
-      // ★ 0.3.1: addSystemMessage 用 try/catch 包裹 — 用户报"点击闪退"，可能是
-      //   panel 未打开时调 scrollMessagesToBottom 或 chat-messages 找不到导致 throw
+      // ★ 0.3.1-remote: addSystemMessage 用 try/catch 包裹 — 防极端场景下"点击闪退"
       try {
         addSystemMessage("👤 已设置 display_name = 「" + name + "」，下次 bridge 请求会用新身份。");
       } catch (e) {
@@ -1874,7 +1877,7 @@
     } catch (e) {
       console.error("[bridge] setDisplayName 失败", e);
     }
-    // ★ 0.3.1: 不立即重 bootstrap — 下次 init 即可；如要立即生效可加 reload()
+    // 不立即重 bootstrap — 下次 init 即可；如要立即生效可加 reload()
   }
 
   async function clearDisplayName() {
@@ -3798,12 +3801,11 @@ function appendThinking(text) {
     }
     // ★ 0.3.0: 多用户隔离 — 一次性迁 GM key + 调 /auth/whoami 注入 fingerprint
     try { migrateLegacyKeys(); } catch (e) { console.warn("[bridge] migrateLegacyKeys 失败", e); }
-    // ★ 0.3.1: 关键修复 — 先 await detectBridge() 等探测完成（或首个 ok），
+    // ★ 0.3.1-remote: 关键修复 — 先 await detectBridge() 等探测完成（或首个 ok），
     //   再 await bootstrap() 调 /auth/whoami。否则 bootstrap 在 start() 同步路径里
-    //   立即读 state.bridgeProbes.find(p => p.status === "ok")，但此时探测还在
-    //   async loop 中（state 全 pending），find 返回 undefined → bootstrap early-return
-    //   → fingerprint 永远 null → badge 一直 👤? → 用户报"无指纹"。
-    //   之前的注释（"bootstrap 在 detectBridge 解析 ok 之后跑，时序安全"）是错的。
+    //   立即读 state.bridgeProbes.find(p => p.status === "ok")，但探测还在 async
+    //   loop 中（state 全 pending），find 返回 undefined → bootstrap early-return →
+    //   fingerprint 永远 null → badge 一直 👤?。
     try {
       await detectBridge();
       await bootstrap();
