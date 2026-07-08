@@ -41,5 +41,5 @@
 - [DocHub base64 严格解码 500 (PATCH 34 diag)](dify-dochub-base64-strict-decoder-length-93.md) — `Base64.getUrlDecoder()` 拒绝 length % 4 == 1 (93 chars) 的 URL；用户 URL 同时含 15-char timestamp 文件引用，文件根本不存在。**诊断不出代码问题：DocHub 当前 + nginx 反代完全健康，rerun workflow 即 200 OK**
 - [DocHub Poi-tl 1.12.2 双层 bug 占位符不替换 (PATCH 42)](poi-tl-placeholder-spaces-and-runs.md) — `0 MetaTemplates` 是 Word 切碎 run + Poi-tl regex 不识别空格 {{ var }} 双层叠加，schema 提取 OK 但 render 失败；修复需 Step1 合并跨 run + Step2 去占位符内空格，缺一不可；富文本 {{r xxx }} 需 Poi-tl 1.13+
 - [Poi-tl 1.13+ 不存在](poi-tl-no-1-13-release.md) — GitHub 最后 release = v1.12.2 (2024-01-25)；1.12.3-beta1 是 Maven mirror 上的非正式构建无新功能；`{{r xxx}}` 富文本 Poi-tl 全系列不支持；任何"升级 1.13+ 让富文本生效"设想都是基于错误信息
-- [docxtpl p 标志段落模式](docxtpl-p-flag-paragraph-mode.md) — DocHub/docxtpl 模板多段富文本字段必须用 `{{p var }}` 标志，普通 `{{ var }}` 会丢 LLM 输出的 `\n\n` 软回车/空格，整段挤 1 个 `<w:p>`
+- [Poi-tl 不支持 docxtpl p 标志 (PATCH 51)](docxtpl-p-flag-paragraph-mode.md) — DocHub 用 Poi-tl 1.12.2 不是 docxtpl；`{{p var }}`/`{{r var }}` 字面被当 placeholder name 透传，6 个字段原样输出；**只写 `{{var }}`**；`\n` → `<w:br/>` 软回车无法在 template 层解决
 - [DocHub *_cn 后缀触发 RFC 3339 schema](dify-dochub-date-suffix-triggers-rfc3339-schema.md) — DocHub 自动把 `*_cn` 字段推断成 date 拒收中文；中文显示必须双字段：`*_cn` 传 ISO（满足 schema）+ `*_cn_text` 传中文（模板渲染）

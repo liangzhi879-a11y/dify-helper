@@ -1,3 +1,42 @@
+## PATCH 51 — 2026-07-08 (回退 PATCH 47 翻车 + 封面分节符)
+
+- **app_id**: WF_RDReport (v2 doc-ext 复刻) (7ab3c5fd-306a-4180-a99a-693604bd5c69)
+- **症状**: PATCH 47 给 6 个富文本字段加 docxtpl `{{p var }}` 段落标志后, 6 个字段输出**字面文本** `{{p project_intro}}` / `{{p tech_innovation}}` / `{{p project_deliverables}}` / `{{p project_achievements}}` / `{{p comprehensive_profits}}`；用户同时要求"模板封面 XXXX年制后加一个分节符"
+- **根因**: DocHub 用 **Poi-tl 1.12.2 (不是 docxtpl)**，Poi-tl 把 `{{p project_intro}}` 整个当 placeholder name 查找 → dataJson 没有 `p project_intro` 这个 key → 透传 raw text。docxtpl 的 `p` / `r` / `rp` 标志在 Poi-tl 0 识别
+- **修复**:
+  1. 6 个 `{{p var }}` → `{{var }}` (revert PATCH 47)
+  2. 在 `{{project_year_cn}}` 段落 (XXXX年制) 的 `<w:pPr>` 末尾插入 `<w:sectPr>` (clone 文档末尾 sectPr 属性, 含 page size / margin / type=nextPage) → 封面→正文强制换页
+- **方法**: python script 解包 docx → 改 `word/document.xml` → repack → `docker cp` 到 DocHub 容器
+- **验证**:
+  - DocHub `/api/v1/generate` 200, fileSize 30487 bytes
+  - 解包验证: 0 字面 `{{` 透传, 12 个关键字段全渲染, sectPr=2 (cover + rest)
+  - 软回车限制 (Poi-tl `\n → <w:br/>`) 仍存在, **无法在 template 层解决** —— 需 DocHub 插件升级或多 placeholder 拆分
+- **PATCH 脚本**: `backups/_tmp_scripts/_patch51_revert_p_flag_add_sectionbreak.py`
+- **关联**: memory `poi-tl-p-flag-does-not-exist` (新建, 取代旧的 `docxtpl-p-flag-paragraph-mode`) + [[poi-tl-no-1-13-release]]
+
+---
+
+## PATCH 50 — 2026-07-08 (DocHub 日期 schema 校验 + 双字段方案)
+
+- **app_id**: WF_RDReport (v2 doc-ext 复刻) (7ab3c5fd-306a-4180-a99a-693604bd5c69)
+- **症状**: PATCH 48 移除 `cn_date_to_iso()` 改传中文日期后, DocHub 返回 `HTTP 400 "数据校验失败，共 2 个错误"`: `$.start_date_cn: does not match the date pattern must be a valid RFC 3339 full-date` + `$.finish_date_cn` 同
+- **根因**: DocHub dataJson schema auto-inference 看字段名 `_cn` 后缀就推断成 `date` 类型按 RFC 3339 校验, **不接受中文**
+- **修复（双字段方案）**:
+  1. 恢复 `cn_date_to_iso()` 给 `start_date_cn` / `finish_date_cn` (ISO, 满足 schema)
+  2. 新增 `start_date_cn_text` / `finish_date_cn_text` 存中文 (schema 不校验 `_text` 后缀)
+  3. 模板里 3 处 `{{start_date_cn}}` → `{{start_date_cn_text}}`, 2 处 `{{finish_date_cn}}` → `{{finish_date_cn_text}}`
+- **关联**: memory `dify-dochub-date-suffix-triggers-rfc3339-schema` (新建) + [[dify-dochub-empty-date-cn-date-to-iso]] (PATCH 30)
+
+---
+
+## PATCH 47 — 2026-07-08 (已回退) (docxtpl p 标志加 6 富文本字段)
+
+- **症状**: 试图给 `project_intro` / `tech_innovation` (x2) / `project_deliverables` / `project_achievements` / `comprehensive_profits` 加 `{{p var }}` paragraph mode 让 LLM `\n\n` 拆段
+- **翻车**: DocHub 用 Poi-tl 1.12.2, **不支持** docxtpl `p` 标志, 6 字段原样输出
+- **回退**: PATCH 51
+
+---
+
 ## PATCH 42 — 2026-07-08 (DocHub 模板 docx 占位符双层修复)
 
 - **app_id**: WF_RDReport (v2 doc-ext 复刻) (7ab3c5fd-306a-4180-a99a-693604bd5c69)
