@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window (Remote Edition)
 // @namespace    https://github.com/dify-helper
-// @version      0.3.4-remote
+// @version      0.3.5-remote
 // @description  远程访问 Dify 专用版：适配 http://REDACTED_HOST:9980/，桥接服务自动探测
 // @author       dify-helper
 // @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
@@ -10,6 +10,11 @@
 // @supportURL   https://github.com/liangzhi879-a11y/dify-helper/issues
 // @match        http://REDACTED_HOST:9980/*
 // @connect      REDACTED_HOST
+// ★ 0.3.5-remote 面板 titlebar 单行化 + FAB 机器人居中修复 + 跳动动画（与本地版同步）：
+//   1) titlebar: flex-wrap:nowrap + 标题 flex:1+min-width:0(ellipsis) + 右簇 flex:0 0 auto
+//   2) FAB 像素画: text-align:left + display:inline-block + translateX(-0.5px) 居中补偿
+//      unicode box-drawing 半角/全角混排
+//   3) FAB 跳动动画: hostEl 加 .dcfw-panel-open → @keyframes 1.2s 上下 3px 循环
 // ★ 0.3.4-remote 加 GitHub auto-update URL（与本地版同步）：
 //   @updateURL / @downloadURL 指向 .../main/tampermonkey/...-remote.user.js
 //   区别于本地版：路径带 -remote 后缀，更新时也走 GitHub
@@ -796,6 +801,7 @@
 
     hostEl = document.createElement("div");
     hostEl.id = "dify-claude-floating-window-host";
+    hostEl.className = "dcfw-host";  /* ★ 0.3.5-remote: 给 host 加 class 钩子，配合 FAB 跳动动画 */
     // ⚠️ 不用 `all:initial`：它会覆盖前面的 `position:fixed`（CSS cascade 规则），
     // 导致悬浮按钮变成"追加在页面底部"的普通块级元素。
     // Shadow DOM 已经提供了样式隔离，这里不需要 `all:initial`。
@@ -900,6 +906,8 @@
           resetPanelPosition();
         }
         panel.classList.add("open");
+        // ★ 0.3.5-remote: host 加 dcfw-panel-open class → 触发 FAB 机器人跳动
+        if (hostEl) hostEl.classList.add("dcfw-panel-open");
         fab.innerHTML = "✕";
         if (!state.sessionId) {
           initSession();
@@ -911,6 +919,8 @@
         }
       } else {
         panel.classList.remove("open");
+        // ★ 0.3.5-remote: 移除 host class → FAB 机器人回到静态
+        if (hostEl) hostEl.classList.remove("dcfw-panel-open");
         // ★ 0.2.17: 关闭时恢复 ClaudeCode 机器人像素画
         fab.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▐▛███▜▌\n▝▜█████▛▘\n  ▘▘ ▝▝</pre>';
       }
@@ -969,17 +979,31 @@
       align-items: center;
       justify-content: center;
     }
-    /* ★ 0.2.17: ClaudeCode 机器人像素画（3 行 unicode 字符画） */
+    /* ★ 0.2.17: ClaudeCode 机器人像素画（3 行 unicode 字符画）
+       ★ 0.3.5-remote: 居中修复 —— 改 text-align:left + inline-block +
+         translateX(-0.5px) 补偿 unicode box-drawing 半角/全角混排 */
     .dcfw-fab-robot {
-      margin: 0;
+      margin: 0; padding: 0;
       font-family: "SF Mono", "Monaco", "Menlo", "Consolas", "Courier New", monospace;
-      font-size: 8px;
-      line-height: 9px;
-      letter-spacing: 0;
+      font-size: 8px; line-height: 9px; letter-spacing: 0;
       color: #fff;
-      text-align: center;
+      text-align: left;
       white-space: pre;
-      pointer-events: none;  /* 防止 pre 拦截 FAB 的 click/drag */
+      pointer-events: none;
+      display: inline-block;
+      transform: translateX(-0.5px);
+    }
+    /* ★ 0.3.5-remote: 跳动动画 —— host 加 dcfw-panel-open 时循环 */
+    @keyframes dcfw-robot-jump {
+      0%, 100% { transform: translateX(-0.5px) translateY(0); }
+      50%      { transform: translateX(-0.5px) translateY(-3px); }
+    }
+    .dcfw-host.dcfw-panel-open #dcfw-fab .dcfw-fab-robot {
+      animation: dcfw-robot-jump 1.2s ease-in-out infinite;
+    }
+    .dcfw-host:not(.dcfw-panel-open) #dcfw-fab .dcfw-fab-robot {
+      animation: none;
+      transform: translateX(-0.5px);
     }
     #dcfw-fab:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(204, 120, 92, 0.55); }
     #dcfw-fab.dragging { cursor: grabbing; transition: none; }
@@ -997,14 +1021,19 @@
     #dcfw-panel.open { display: flex; }
 
     .dcfw-titlebar {
-      padding: 10px 14px; background: #CC785C;
-      color: #fff; display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 10px; background: #CC785C;
+      color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 8px;
       cursor: move; user-select: none; font-size: 13px; font-weight: 600;
       touch-action: none;
       position: relative;    /* ★ 0.2.8: 给 mode popover 绝对定位锚点 */
+      flex-wrap: nowrap;     /* ★ 0.3.5-remote: 强制单行 */
+    }
+    .dcfw-titlebar > span:first-child {
+      flex: 1 1 auto; min-width: 0; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
     }
     .dcfw-titlebar-status { font-size: 11px; opacity: 0.9; font-weight: 400; }
-    .dcfw-titlebar-right { display: flex; align-items: center; gap: 6px; }
+    .dcfw-titlebar-right { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 
     /* ★ 0.2.7/0.2.8: Claude 模式徽章（0.2.8 起兼任下拉触发器，删掉原生 select） */
     .dcfw-mode-badge {
