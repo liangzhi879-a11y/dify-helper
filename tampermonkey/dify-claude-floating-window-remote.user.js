@@ -10,10 +10,12 @@
 // @supportURL   https://github.com/liangzhi879-a11y/dify-helper/issues
 // @match        http://REDACTED_HOST:9980/*
 // @connect      REDACTED_HOST
-// ★ 0.3.7-remote 标题栏拆两行 + 机器人加眼睛（与本地版同步）：
+// ★ 0.3.7-remote 标题栏拆两行 + 恢复原始机器人图样（对照桌面 CLAUDECODE bot，与本地版同步）：
 //   1) 标题栏（第一行）只剩"标题 + 👤 + ✕"三项；其余徽章下移到第二行
 //   2) 第二行 = .dcfw-statusbar，三 cell：权限(mode) / Agent(status+bridge) / URL(page)
-//   3) FAB 像素画加 ● 眼睛 "▄▀▀▀▀▄\n█▀●▀●█\n▀▄▄▄▄▀"
+//   3) FAB 像素画改回原版 ▐▛███▜▌ / ▝▜█████▛▘ / " ▘▘ ▝▝"
+//      —— 腿偏右问题已修：1 空格 + 5 字 = 6 列居中
+//      —— CSS 加 font-variant-emoji:text 防 emoji 字体接管导致宽度漂移
 // ★ 0.3.6-remote FAB 像素画重设计 + 跳动动画（与本地版同步）：
 //   1) 像素画：纯半角 block 元素 (▄▀█)，3 行各 6 字符，跨字体稳定对齐
 //   2) 跳动动画：translateY(-4px) 1.2s 循环，纯垂直跳动
@@ -832,7 +834,7 @@
     const btn = document.createElement("div");
     btn.id = "dcfw-fab";
     // ★ 0.2.17: ClaudeCode 小机器人像素画（3 行字符画）
-    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▄▀▀▀▀▄\n█▀●▀●█\n▀▄▄▄▄▀</pre>';
+    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▐▛███▜▌\n▝▜█████▛▘\n ▘▘ ▝▝</pre>';
     btn.title = "Dify Claude 助手（拖拽移动位置）";
     // 不在这里注册 click，由 setupFabDrag() 统一管理（避免与拖拽吞 click 冲突）
     fabWrap.appendChild(btn);
@@ -986,7 +988,10 @@
       justify-content: center;
     }
     /* ★ 0.2.17: ClaudeCode 机器人像素画（3 行 unicode 字符画）
-       ★ 0.3.5-remote: 改用纯半角 block 元素 (▄▀█)，3 行各 6 字符，跨字体稳定 */
+       ★ 0.3.5-remote: 改用纯半角 block 元素 (▄▀█)，3 行各 6 字符，跨字体稳定
+       ★ 0.3.7-rc2-remote: 改回原版 ▐▛▜▌▝▘ —— 用户要求对照桌面 CLAUDECODE bot
+         文档恢复原始设计。腿偏右问题已修正（1 空格 + 5 字 = 6 列居中）。
+         CSS 加 font-variant-emoji: text 防止 emoji 字体接管导致宽度漂移。 */
     .dcfw-fab-robot {
       margin: 0; padding: 0;
       font-family: "SF Mono", "Monaco", "Menlo", "Consolas", "Courier New", monospace;
@@ -996,6 +1001,8 @@
       white-space: pre;
       pointer-events: none;
       display: inline-block;
+      font-variant-emoji: text;
+      font-feature-settings: "tnum" 1;
     }
     /* ★ 0.3.5-remote: 跳动动画 */
     @keyframes dcfw-robot-jump {

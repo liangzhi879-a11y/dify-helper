@@ -8,11 +8,14 @@
 // @updateURL    https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window.user.js
 // @downloadURL  https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window.user.js
 // @supportURL   https://github.com/liangzhi879-a11y/dify-helper/issues
-// ★ 0.3.7 标题栏拆两行 + 机器人加眼睛：
+// ★ 0.3.7 标题栏拆两行 + 恢复原始机器人图样（对照桌面 CLAUDECODE bot）：
 //   1) 标题栏（第一行）只剩"标题 + 👤 + ✕"三项；其余 6 个徽章下移到第二行
 //   2) 第二行 = .dcfw-statusbar，三 cell：权限(mode) / Agent(status+bridge) / URL(page)
 //      整 cell 可点：mode→下拉 / Agent→重探测 / URL→复制+显示
-//   3) FAB 像素画加 ● 眼睛 "▄▀▀▀▀▄\n█▀●▀●█\n▀▄▄▄▄▀" —— 0.3.6 全实心无表情，0.3.7 补回眼睛
+//   3) FAB 像素画改回原版 ▐▛███▜▌ / ▝▜█████▛▘ / " ▘▘ ▝▝"
+//      —— 0.3.5/0.3.6 简化版丢掉了头/脸特征，用户对照桌面文档要求恢复
+//      —— 腿偏右问题已修：原文件第 3 行 5 空格 + 5 字 = 10 列错位，现 1 空格 + 5 字 = 6 列居中
+//      —— CSS 加 font-variant-emoji:text 防 emoji 字体接管导致宽度漂移
 // ★ 0.3.6 FAB 机器人像素画重设计 + 跳动动画修复（用户报 0.3.5 翻车）：
 //   1) 像素画：原 "▐▛███▜▌\n▝▜█████▛▘\n  ▘▘ ▝▝" 改用纯半角 block
 //     "▄▀▀▀▀▄\n█▀  ▀█\n▀▀▀▀▀▀" —— 3 行各 6 字符，全用 ▄▀█
@@ -839,7 +842,7 @@
     const btn = document.createElement("div");
     btn.id = "dcfw-fab";
     // ★ 0.2.17: ClaudeCode 小机器人像素画（3 行字符画）
-    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▄▀▀▀▀▄\n█▀●▀●█\n▀▄▄▄▄▀</pre>';
+    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▐▛███▜▌\n▝▜█████▛▘\n ▘▘ ▝▝</pre>';
     btn.title = "Dify Claude 助手（拖拽移动位置）";
     // 不在这里注册 click，由 setupFabDrag() 统一管理（避免与拖拽吞 click 冲突）
     fabWrap.appendChild(btn);
@@ -1002,7 +1005,12 @@
        ★ 0.3.5: 改用纯半角 block 元素 (▄▀█) —— 之前的字符画混了
          ▐▛▜▌▝▘ 等 box-drawing 字符，这些在不同 monospace 字体里
          半角/全角宽度混排导致腿视觉偏右。新设计全用 ▄▀█，所有 3 行
-         都是 6 个字符，跨字体稳定对齐。 */
+         都是 6 个字符，跨字体稳定对齐。
+       ★ 0.3.7-rc2: 改回原版 ▐▛▜▌▝▘ —— 用户要求对照桌面 CLAUDECODE bot
+         文档恢复原始设计。腿偏右问题在 0.3.5/0.3.6 之前是空格数错了
+         （原文 5 空格 + 5 字 = 10 列，头只 6 列），现在已修正为 1 空格
+         + 5 字 = 6 列，与头同宽居中。CSS 加 font-variant-emoji: text
+         防止 emoji 字体接管导致宽度漂移。 */
     .dcfw-fab-robot {
       margin: 0;
       padding: 0;
@@ -1015,6 +1023,8 @@
       white-space: pre;
       pointer-events: none;
       display: inline-block;
+      font-variant-emoji: text;     /* 防止 emoji 字体接管 ▐▛▜▌▝▘ */
+      font-feature-settings: "tnum" 1;  /* 启用等宽数字（部分字体需要） */
     }
     /* ★ 0.3.5: 跳动动画 —— host 加 dcfw-panel-open 时循环 */
     @keyframes dcfw-robot-jump {
