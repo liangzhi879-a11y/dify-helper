@@ -10,14 +10,16 @@
 // @supportURL   https://github.com/liangzhi879-a11y/dify-helper/issues
 // @match        http://REDACTED_HOST:9980/*
 // @connect      REDACTED_HOST
-// ★ 0.3.7-remote 标题栏拆两行 + 恢复原始机器人图样（对照桌面 CLAUDECODE bot，与本地版同步）：
+// ★ 0.3.7-remote 标题栏拆两行 + FAB 机器人中轴对齐（与本地版同步）：
 //   1) 标题栏（第一行）只剩"标题 + 👤 + ✕"三项；其余徽章下移到第二行
 //   2) 第二行 = .dcfw-statusbar，三 cell：权限(mode) / Agent(status+bridge) / URL(page)
-//   3) FAB 像素画严格按桌面 CLAUDECODE bot 文档原样（列对齐）：
-//        行1（头）: "  ▐▛███▜▌"    ← col 3-9
-//        行2（身）: "▝▜█████▛▘"    ← col 1-9
-//        行3（腿）: "     ▘▘ ▝▝"   ← col 6-10
-//      —— 0.3.7 中间版自作主张"修腿偏右"反而把头脚都移位了，现严格按文档列对齐
+//   3) FAB 像素画用 v0.3.6 的 6×3 居中设计（用户最终诉求：头身脚中轴对齐）
+//        行1（头）: "▄▀▀▀▀▄"
+//        行2（脸）: "█▀  ▀█"  ← 两个 ▀ 块作为"眼睛/眉毛"
+//        行3（脚）: "▀▄▄▄▄▀"
+//      —— 全 6 列 × 3 行，所有字符半角 block (▄▀█)，跨字体稳定
+//      —— 之前试过恢复桌面 CLAUDECODE bot 文档的 ▐▛▜▌▝▘ 字符，但那些字符在不同
+//        字体里半角/全角宽度混排导致头脚都偏位（用户连续 2 次反馈偏位）
 //      —— CSS 加 font-variant-emoji:text 防 emoji 字体接管导致宽度漂移
 // ★ 0.3.6-remote FAB 像素画重设计 + 跳动动画（与本地版同步）：
 //   1) 像素画：纯半角 block 元素 (▄▀█)，3 行各 6 字符，跨字体稳定对齐
@@ -837,7 +839,7 @@
     const btn = document.createElement("div");
     btn.id = "dcfw-fab";
     // ★ 0.2.17: ClaudeCode 小机器人像素画（3 行字符画）
-    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">  ▐▛███▜▌\n▝▜█████▛▘\n     ▘▘ ▝▝</pre>';
+    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▄▀▀▀▀▄\n█▀  ▀█\n▀▄▄▄▄▀</pre>';
     btn.title = "Dify Claude 助手（拖拽移动位置）";
     // 不在这里注册 click，由 setupFabDrag() 统一管理（避免与拖拽吞 click 冲突）
     fabWrap.appendChild(btn);
