@@ -48,8 +48,8 @@ def test_local_fix() -> list[str]:
     failures = []
     src = read_js(LOCAL_JS)
 
-    # 1) 版本号已 bump 到 0.3.10
-    failures += assert_contains("local.version", src, "@version      0.3.10")
+    # 1) 版本号已 bump 到 0.3.11
+    failures += assert_contains("local.version", src, "@version      0.3.11")
 
     # 2) v0.3.1 race condition 修复说明注释存在
     failures += assert_contains("local.changelog_v031", src, "★ 0.3.1 修复 v0.3.0 启动 race condition")
@@ -95,6 +95,9 @@ def test_local_fix() -> list[str]:
     failures += assert_contains("local.error_probe_summary", src, "BRIDGE 探测结果")
     failures += assert_contains("local.error_gm_value_hint", src, "__bridge_remote_host__")
     failures += assert_contains("local.error_router_hint", src, "路由器 8002 端口必须转发")
+    # 8e) v0.3.11: 从 window.location 自动推导 remote bridge host
+    failures += assert_contains("local.auto_derive_from_location", src, "new URL(window.location.href)")
+    failures += assert_contains("local.private_ip_filter", src, "isPrivate")
     # 9) statusbar 内部子元素（mode/badge/page）背景/边框/圆角都被覆盖为透明
     failures += assert_contains("local.mode_badge_in_statusbar_transparent", src, ".dcfw-statusbar-cell .dcfw-mode-badge {")
     failures += assert_contains("local.bridge_badge_in_statusbar_transparent", src, ".dcfw-statusbar-cell .dcfw-bridge-badge {")
@@ -182,7 +185,7 @@ def test_remote_fix() -> list[str]:
     failures = []
     src = read_js(REMOTE_JS)
 
-    failures += assert_contains("remote.version", src, "@version      0.3.10-remote")
+    failures += assert_contains("remote.version", src, "@version      0.3.11-remote")
 
     # v0.3.3-remote 修复 changelog
     failures += assert_contains("remote.changelog_v033", src, "★ 0.3.3-remote 修复 Firefox 上点 FAB 直接闪退的真根因")
@@ -218,6 +221,8 @@ def test_remote_fix() -> list[str]:
     failures += assert_contains("remote.error_probe_summary", src, "BRIDGE 探测结果")
     failures += assert_contains("remote.error_gm_value_hint", src, "__bridge_remote_host__")
     failures += assert_contains("remote.error_router_hint", src, "路由器 8002 端口必须转发")
+    failures += assert_contains("remote.auto_derive_from_location", src, "new URL(window.location.href)")
+    failures += assert_contains("remote.private_ip_filter", src, "isPrivate")
 
     failures += assert_regex("remote.start_async", src, r"async function start\(\)")
     m = re.search(r"await detectBridge\(\);\s*\n\s*await bootstrap\(\);", src)

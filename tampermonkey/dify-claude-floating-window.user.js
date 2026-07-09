@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window
 // @namespace    https://github.com/dify-helper
-// @version      0.3.10
+// @version      0.3.11
 // @description  本机 Dify 调试专用版：与本地 bridge 配合，悬浮 Claude CLI
 // @author       dify-helper
 // @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
@@ -27,6 +27,13 @@
 //      即可启动时自动注入；未配置只走 loopback fallback
 //   4) gmFetch.onerror 包 Error — 之前直接 reject(err)，上游 e.message||e 走到 e 分支
 //      → String(err) === "[object Object]"，错误消息不可读
+// ★ 0.3.11 自动从 window.location 推导 remote bridge host：
+//   之前要求用户在 Tampermonkey 脚本值（Values 标签）里设 __bridge_remote_host__。
+//   油猴面板只有"编辑器/设置"两个标签，Values 是用户值（脚本 set/get 用），
+//   多数用户找不到。现在改为自动从当前页面 URL 推导：用户在
+//   http://<公网 IP>:9980/ 访问时，自动派生 http://<公网 IP>:8002。
+//   本机/loopback 访问仍只探测 loopback fallback，公网 IP 不入仓。
+//   GM_getValue("__bridge_remote_host__") 仍作为用户硬覆盖保留。
 // ★ 0.3.10 initSession 错误消息带上 BRIDGE 探测结果 + 远程配置提示：
 //   之前只显示最后一次 initSession catch 的 e.message，远程用户看不到 BRIDGE_CANDIDATES
 //   探测状态（每个 URL 是 ok/fail/pending、错误原因），只能盲猜。现在把探测结果列表
@@ -238,22 +245,42 @@
 
   // 候选 BRIDGE_URL 列表（按优先级探测）
   // 远程访问场景下首选公网地址，本地/同网段访问也能 fallback
-  // ★ 0.3.8: 公网 IP 不入仓 —— 用户在 Tampermonkey 脚本值里设
-  //   GM_setValue("__bridge_remote_host__", "<你的公网 IP>") 后启动时会自动注入
-  //   占位符 __REMOTE_BRIDGE_HOST__；未设置则只探测 fallback。
+  // ★ 0.3.11: 自动从 window.location 推导 remote bridge host
+  //   - 用户在 http://<公网 IP>:9980/ 访问 Dify 时，自动派生出 http://<公网 IP>:8002
+  //   - 公网 IP 仍不入仓（避免脱敏负担），用户在 Dify 页面访问就自动生效
+  //   - 本机访问（127.0.0.1/localhost/192.168.x.x）仍走 loopback fallback
+  // ★ 0.3.8: 用户也可在 Tampermonkey 脚本值里设
+  //   GM_setValue("__bridge_remote_host__", "<公网 IP>") 覆盖推导值。
   const BRIDGE_CANDIDATES = [
-    "http://__REMOTE_BRIDGE_HOST__:8002",   // 远程（用户 GM 配置，未配置则跳过）
+    "http://__REMOTE_BRIDGE_HOST__:8002",   // 远程（自动从 window.location 推导，未推导出则跳过）
     "http://127.0.0.1:8002",        // 本机 loopback
     "http://localhost:8002",        // 本机 loopback 备选
   ];
-  // ★ 0.3.8: GM 配置的公网 host 注入占位符（一次配置，永久生效）
+  // ★ 0.3.11: 优先 GM 值；否则从 window.location 自动推导；都无则降级跳过占位符
   (function injectRemoteBridgeHost() {
     try {
-      const h = GM_getValue("__bridge_remote_host__", "");
+      // 1) 用户硬覆盖（最高优先级）
+      let h = GM_getValue("__bridge_remote_host__", "");
+      if (!h || !h.trim()) {
+        // 2) 自动从当前页面 URL 推导（同 host，端口 9980 → 8002）
+        try {
+          const pageUrl = new URL(window.location.href);
+          const host = pageUrl.hostname;
+          // 只在 "非 loopback / 非纯 LAN" 时才算 remote
+          const isPrivate = host === "127.0.0.1" || host === "localhost"
+            || host.startsWith("192.168.")
+            || host.startsWith("10.")
+            || /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+          if (!isPrivate && host) {
+            h = host;
+          }
+        } catch (_) {}
+      }
       if (h && h.trim()) {
         BRIDGE_CANDIDATES[0] = "http://" + h.trim() + ":8002";
       } else {
-        BRIDGE_CANDIDATES.shift();  // 未配置 → 降级跳过占位符
+        // 3) 都无 → 降级跳过占位符（避免探测 __REMOTE_BRIDGE_HOST__）
+        BRIDGE_CANDIDATES.shift();
       }
     } catch (_) {
       BRIDGE_CANDIDATES.shift();
