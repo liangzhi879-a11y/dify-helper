@@ -1066,38 +1066,95 @@
     .dcfw-titlebar-title {
       flex: 1 1 auto; min-width: 0; overflow: hidden;
       text-overflow: ellipsis; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .dcfw-titlebar-title::before {
+      content: "▌";                     /* 终端 block cursor */
+      opacity: 0.55;
+      font-weight: 300;
+      font-family: "SF Mono", "Menlo", "Consolas", monospace;
     }
     .dcfw-titlebar-actions { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
     .dcfw-titlebar-status { font-size: 11px; opacity: 0.9; font-weight: 400; }
-    /* ★ 0.3.7: 第二行状态栏 —— 权限 / Agent / URL 三列 */
+    /* ★ 0.3.7: 第二行状态栏 —— 拟终端 prompt 链
+       设计意图：模拟 shell prompt  "▸ ⚡AUTO │ ● agent │ ~/dify-page"
+       - 无 padding / 无 border / 无 hover 反馈（与 REPL 工具栏一致）
+       - 用 ASCII 字符 (▸ │) 代替 pill 边框，让结构靠字符本身
+       - 字号比 titlebar 小 2px，灰度更弱（"环境信息" 不是 "主标题"） */
     .dcfw-statusbar {
-      display: flex; align-items: stretch; gap: 1px;
-      background: rgba(0,0,0,0.12);   /* cell 之间的分隔线 */
-      padding: 0; font-size: 11px;
+      display: flex; align-items: center; gap: 0;
+      background: #B86A50;            /* 比 titlebar 略深 */
       color: #fff;
+      padding: 3px 10px;
+      font-family: "SF Mono", "Menlo", "Consolas", monospace;
+      font-size: 11px;
+      line-height: 14px;
       user-select: none;
     }
     .dcfw-statusbar-cell {
-      flex: 0 0 auto;
-      display: flex; align-items: center; gap: 6px;
-      padding: 4px 10px;
-      background: #B86A50;            /* 比 titlebar 略深一点 */
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 0;
       cursor: pointer;
       min-width: 0;
     }
+    .dcfw-statusbar-cell + .dcfw-statusbar-cell::before {
+      content: "│";                     /* prompt 分隔符 */
+      margin: 0 8px;
+      opacity: 0.35;
+      font-weight: 300;
+      pointer-events: none;
+    }
     .dcfw-statusbar-cell.dcfw-statusbar-cell-grow { flex: 1 1 auto; }
-    .dcfw-statusbar-cell:hover  { background: #A85F47; }
+    .dcfw-statusbar-cell:hover .dcfw-statusbar-prompt { opacity: 1; }
+    .dcfw-statusbar-cell:hover .dcfw-statusbar-value { opacity: 1; }
+
+    /* 拟 prompt 前缀：▸ 仅第一个 cell 有 (主 prompt) */
+    .dcfw-statusbar-prompt {
+      opacity: 0.55;
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
     .dcfw-statusbar-label {
-      font-size: 10px; opacity: 0.7; font-weight: 600;
-      letter-spacing: 0.3px;
+      opacity: 0.55;                    /* "权限" / "Agent" / "URL" 是 schema 提示 */
+      font-weight: 400;
+    }
+    .dcfw-statusbar-value {
+      opacity: 0.95;
+      font-weight: 600;
+      min-width: 0;
     }
     .dcfw-statusbar-cell .dcfw-mode-badge {
-      font-size: 11px; padding: 1px 6px; border-radius: 8px;
+      font-size: 11px; padding: 0; border-radius: 0;
+      background: transparent;         /* 去掉 pill 底，纯文字 */
+      color: inherit;
+      border: none;
+      font-weight: 600;
+    }
+    .dcfw-statusbar-cell .dcfw-bridge-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 0; background: transparent;
+      font-weight: 600;
+      color: inherit;
+      border: none;
+      margin-left: 0;
+      cursor: pointer;
+    }
+    .dcfw-statusbar-cell .dcfw-bridge-badge.probing,
+    .dcfw-statusbar-cell .dcfw-bridge-badge.connected,
+    .dcfw-statusbar-cell .dcfw-bridge-badge.failed {
+      background: transparent;       /* 去掉 pill 底色 */
+      color: inherit;
+    }
+    .dcfw-statusbar-cell .dcfw-bridge-dot {
+      width: 7px; height: 7px;       /* prompt 链里 dot 小一点 */
     }
     .dcfw-statusbar-cell .dcfw-page-badge {
       flex: 1 1 auto; min-width: 0; overflow: hidden;
       text-overflow: ellipsis; white-space: nowrap;
       font-size: 11px; opacity: 0.95;
+      background: transparent;
+      padding: 0;
+      border: none;
     }
 
     /* ★ 0.2.7/0.2.8: Claude 模式徽章（0.2.8 起兼任下拉触发器，删掉原生 select） */
@@ -1153,7 +1210,15 @@
     .dcfw-tab {
       flex: 1; padding: 8px 0; text-align: center; cursor: pointer;
       font-size: 12px; color: #8B7355; border-bottom: 2px solid transparent;
-      transition: all 0.15s;
+      transition: color 0.15s, background-color 0.15s;
+      letter-spacing: 0.5px;
+    }
+    .dcfw-tab::before {
+      content: "▎";                     /* tab 起始竖条 (与 statusbar 风格一致) */
+      opacity: 0.35;
+      margin-right: 3px;
+      font-size: 10px;
+      vertical-align: 1px;
     }
     .dcfw-tab:hover { color: #4A3F35; background: #F5F0E8; }
     .dcfw-tab.active { color: #CC785C; border-bottom-color: #CC785C; font-weight: 600; }
@@ -1567,23 +1632,25 @@
         <button class="dcfw-close-btn" id="dcfw-close-btn" title="关闭面板">✕</button>
       </span>
     </div>
-    <!-- ★ 0.3.7: 第二行状态栏 —— mode / agent status / url 三列 -->
+    <!-- ★ 0.3.7: 第二行状态栏 —— 拟终端 prompt 链
+         视觉：▸ ⚡AUTO │ ● agent │ ~/dify-page
+         第一个 cell 用 ▸ (主 prompt)，其它 cell 用 │ 分隔 -->
     <div class="dcfw-statusbar">
       <div class="dcfw-statusbar-cell" id="dcfw-mode-cell" title="点击切换 Claude 权限模式">
-        <span class="dcfw-statusbar-label">权限</span>
-        <span class="dcfw-mode-badge mode-bypass" id="dcfw-mode-badge">⚡ AUTO</span>
+        <span class="dcfw-statusbar-prompt">▸</span>
+        <span class="dcfw-mode-badge mode-bypass" id="dcfw-mode-badge">⚡AUTO</span>
       </div>
       <div class="dcfw-statusbar-cell" id="dcfw-agent-cell" title="Agent 连接状态">
-        <span class="dcfw-statusbar-label">Agent</span>
-        <span class="dcfw-titlebar-status" id="dcfw-status" title="未连接">○</span>
+        <span class="dcfw-statusbar-label">agent</span>
+        <span class="dcfw-statusbar-value dcfw-titlebar-status" id="dcfw-status" title="未连接">○</span>
         <span class="dcfw-bridge-badge probing" id="dcfw-bridge-badge" title="正在探测 bridge 可用地址">
           <span class="dcfw-bridge-dot pulse"></span>
-          <span id="dcfw-bridge-badge-text">探测中</span>
+          <span id="dcfw-bridge-badge-text">探测</span>
         </span>
       </div>
       <div class="dcfw-statusbar-cell dcfw-statusbar-cell-grow" id="dcfw-url-cell" title="当前页面 URL 检测">
-        <span class="dcfw-statusbar-label">URL</span>
-        <span class="dcfw-page-badge" id="dcfw-page-badge" title="尚未捕获页面">—</span>
+        <span class="dcfw-statusbar-label">url</span>
+        <span class="dcfw-statusbar-value dcfw-page-badge" id="dcfw-page-badge" title="尚未捕获页面">—</span>
       </div>
     </div>
     <!-- ★ 0.2.8: 徽章内嵌下拉，点 badge 触发 -->

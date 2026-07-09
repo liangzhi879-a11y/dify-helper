@@ -74,10 +74,19 @@ def test_local_fix() -> list[str]:
     failures += assert_contains("local.changelog_v036", src, "★ 0.3.6 FAB 机器人像素画重设计 + 跳动动画修复")
     failures += assert_contains("local.no_close_icon", src, "// ★ 0.3.5: 不再切到 \"✕\" — 机器人保持显示")
 
-    # 7) v0.3.7 标题栏拆两行 + FAB 用 Claude Code 官方 banner 像素画
+    # 7) v0.3.7 标题栏拆两行 + 拟终端 prompt 链 statusbar + FAB 用 Claude Code 官方 banner
     failures += assert_contains("local.changelog_v037", src, "★ 0.3.7 标题栏拆两行 + FAB 用 Claude Code 官方 banner")
     failures += assert_contains("local.robot_official_banner", src, 'btn.innerHTML = \'<pre class="dcfw-fab-robot" aria-hidden="true"> ▐▛███▜▌\\n▝▜█████▛▘\\n  ▘▘ ▝▝</pre>\'')
     failures += assert_contains("local.robot_font_variant_emoji", src, "font-variant-emoji: text")
+    # 8) v0.3.7 拟终端 prompt 链：▌ title prefix + ▸ statusbar prompt + │ separator + ▎ tab prefix
+    failures += assert_contains("local.title_block_cursor", src, 'content: "▌"')   # ▌
+    failures += assert_contains("local.statusbar_prompt_span", src, 'class="dcfw-statusbar-prompt"')
+    failures += assert_contains("local.statusbar_prompt_symbol", src, "<span class=\"dcfw-statusbar-prompt\">▸</span>")
+    failures += assert_contains("local.statusbar_separator", src, 'content: "│"')
+    failures += assert_contains("local.tab_bar_prefix", src, 'content: "▎"')        # ▎
+    # 9) statusbar 内部子元素（mode/badge/page）背景/边框/圆角都被覆盖为透明
+    failures += assert_contains("local.mode_badge_in_statusbar_transparent", src, ".dcfw-statusbar-cell .dcfw-mode-badge {")
+    failures += assert_contains("local.bridge_badge_in_statusbar_transparent", src, ".dcfw-statusbar-cell .dcfw-bridge-badge {")
     failures += assert_contains("local.statusbar_css", src, ".dcfw-statusbar {")
     failures += assert_contains("local.statusbar_html", src, '<div class="dcfw-statusbar">')
     failures += assert_contains("local.mode_cell", src, 'id="dcfw-mode-cell"')
@@ -184,6 +193,11 @@ def test_remote_fix() -> list[str]:
     failures += assert_contains("remote.robot_official_banner", src, 'btn.innerHTML = \'<pre class="dcfw-fab-robot" aria-hidden="true"> ▐▛███▜▌\\n▝▜█████▛▘\\n  ▘▘ ▝▝</pre>\'')
     failures += assert_contains("remote.statusbar_html", src, '<div class="dcfw-statusbar">')
     failures += assert_contains("remote.titlebar_right_removed", src, 'class="dcfw-titlebar-right"', must_exist=False)
+    # 拟终端 prompt 链（remote 与 local 同步）
+    failures += assert_contains("remote.title_block_cursor", src, 'content: "▌"')
+    failures += assert_contains("remote.statusbar_prompt_symbol", src, "<span class=\"dcfw-statusbar-prompt\">▸</span>")
+    failures += assert_contains("remote.statusbar_separator", src, 'content: "│"')
+    failures += assert_contains("remote.tab_bar_prefix", src, 'content: "▎"')
 
     failures += assert_regex("remote.start_async", src, r"async function start\(\)")
     m = re.search(r"await detectBridge\(\);\s*\n\s*await bootstrap\(\);", src)
