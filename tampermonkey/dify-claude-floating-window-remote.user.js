@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window (Remote Edition)
 // @namespace    https://github.com/dify-helper
-// @version      0.3.7-remote
+// @version      0.3.8-remote
 // @description  远程访问 Dify 专用版：适配 http://REDACTED_HOST:9980/，桥接服务自动探测
 // @author       dify-helper
 // @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
 // @updateURL    https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window-remote.user.js
 // @downloadURL  https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window-remote.user.js
 // @supportURL   https://github.com/liangzhi879-a11y/dify-helper/issues
-// @match        http://REDACTED_HOST:9980/*
-// @connect      REDACTED_HOST
+// @match        http://*/*
+// @connect      *
 // ★ 0.3.7-remote 标题栏拆两行 + FAB 用 Claude Code 官方 banner（与本地版同步）：
 //   1) 标题栏（第一行）只剩"标题 + 👤 + ✕"三项；其余徽章下移到第二行
 //   2) 第二行 = .dcfw-statusbar，三 cell：权限(mode) / Agent(status+bridge) / URL(page)
@@ -20,6 +20,13 @@
 //      —— 字符使用 ▐▛▜▌▝▘ 等 box-drawing 半角 block，原版就这样
 //      —— 行1/2/3 宽度不同（8/9/7 chars）是 Claude Code 原版设计，不是 bug
 //      —— CSS 加 font-variant-emoji:text 防 emoji 字体接管导致宽度漂移
+// ★ 0.3.8-remote 用户反馈修复：
+//   1) tab(对话/会话/资源/快捷) 移除 ▎ 前缀 — 用户反馈"看起来像 icon，不是文字"
+//   2) @match 宽化为 http://*/* — 之前 http://REDACTED_HOST:9980/* 是占位符，
+//      用户在公网（端口 9980 路由器转发）测试时脚本压根没激活（match 不到）
+//   3) BRIDGE_CANDIDATES 占位符 __REMOTE_BRIDGE_HOST__ — 公网 IP 不入仓
+//      用户在 Tampermonkey 脚本值里 GM_setValue("__bridge_remote_host__", "<公网 IP>")
+//      即可启动时自动注入；未配置只走 loopback fallback
 // ★ 0.3.6-remote FAB 像素画重设计 + 跳动动画（与本地版同步）：
 //   1) 像素画：纯半角 block 元素 (▄▀█)，3 行各 6 字符，跨字体稳定对齐
 //   2) 跳动动画：translateY(-4px) 1.2s 循环，纯垂直跳动
@@ -218,12 +225,28 @@
 
   // 候选 BRIDGE_URL 列表（按优先级探测）
   // 远程访问场景下首选公网地址，本地/同网段访问也能 fallback
+  // ★ 0.3.8-remote: 公网 IP 不入仓 —— 用户在 Tampermonkey 脚本值里设
+  //   GM_setValue("__bridge_remote_host__", "<你的公网 IP>") 后启动时会自动注入
+  //   占位符 __REMOTE_BRIDGE_HOST__；未设置则只探测 fallback。
   const BRIDGE_CANDIDATES = [
-    "http://REDACTED_HOST:8002",   // 远程访问（推荐）
-    "http://192.168.x.x:8002",    // 同网段
+    "http://__REMOTE_BRIDGE_HOST__:8002",   // 远程（用户 GM 配置，未配置则探测失败，跳过）
     "http://127.0.0.1:8002",        // 本机 loopback
     "http://localhost:8002",        // 本机 loopback 备选
   ];
+  // ★ 0.3.8-remote: GM 配置的公网 host 注入占位符（一次配置，永久生效）
+  (function injectRemoteBridgeHost() {
+    try {
+      const h = GM_getValue("__bridge_remote_host__", "");
+      if (h && h.trim()) {
+        BRIDGE_CANDIDATES[0] = "http://" + h.trim() + ":8002";
+      } else {
+        // 未配置时把占位符条目降级到最后，避免对 "http://__REMOTE_BRIDGE_HOST__:8002" 发探测
+        BRIDGE_CANDIDATES.shift();
+      }
+    } catch (_) {
+      BRIDGE_CANDIDATES.shift();  // GM_getValue 异常也降级
+    }
+  })();
 
   const CONFIG = {
     BRIDGE_URL: BRIDGE_CANDIDATES[0],     // 启动先用远程地址
@@ -1169,13 +1192,7 @@
       transition: color 0.15s, background-color 0.15s;
       letter-spacing: 0.5px;
     }
-    .dcfw-tab::before {
-      content: "▎";
-      opacity: 0.35;
-      margin-right: 3px;
-      font-size: 10px;
-      vertical-align: 1px;
-    }
+    /* ★ 0.3.8-remote: tab 不再带 ▎ 前缀 — 用户反馈图标化误以为是 icon */
     .dcfw-tab:hover { color: #4A3F35; background: #F5F0E8; }
     .dcfw-tab.active { color: #CC785C; border-bottom-color: #CC785C; font-weight: 600; }
 

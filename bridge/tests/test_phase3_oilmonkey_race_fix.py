@@ -48,8 +48,8 @@ def test_local_fix() -> list[str]:
     failures = []
     src = read_js(LOCAL_JS)
 
-    # 1) 版本号已 bump 到 0.3.7
-    failures += assert_contains("local.version", src, "@version      0.3.7")
+    # 1) 版本号已 bump 到 0.3.8
+    failures += assert_contains("local.version", src, "@version      0.3.8")
 
     # 2) v0.3.1 race condition 修复说明注释存在
     failures += assert_contains("local.changelog_v031", src, "★ 0.3.1 修复 v0.3.0 启动 race condition")
@@ -78,12 +78,16 @@ def test_local_fix() -> list[str]:
     failures += assert_contains("local.changelog_v037", src, "★ 0.3.7 标题栏拆两行 + FAB 用 Claude Code 官方 banner")
     failures += assert_contains("local.robot_official_banner", src, 'btn.innerHTML = \'<pre class="dcfw-fab-robot" aria-hidden="true"> ▐▛███▜▌\\n▝▜█████▛▘\\n  ▘▘ ▝▝</pre>\'')
     failures += assert_contains("local.robot_font_variant_emoji", src, "font-variant-emoji: text")
-    # 8) v0.3.7 拟终端 prompt 链：▌ title prefix + ▸ statusbar prompt + │ separator + ▎ tab prefix
+    # 8) v0.3.7 拟终端 prompt 链：▌ title prefix + ▸ statusbar prompt + │ separator（0.3.8 移除 tab ▎）
     failures += assert_contains("local.title_block_cursor", src, 'content: "▌"')   # ▌
     failures += assert_contains("local.statusbar_prompt_span", src, 'class="dcfw-statusbar-prompt"')
     failures += assert_contains("local.statusbar_prompt_symbol", src, "<span class=\"dcfw-statusbar-prompt\">▸</span>")
     failures += assert_contains("local.statusbar_separator", src, 'content: "│"')
-    failures += assert_contains("local.tab_bar_prefix", src, 'content: "▎"')        # ▎
+    # 8b) v0.3.8: 移除 .dcfw-tab::before ▎ 前缀 + @match 宽化 + 占位符 bridge host
+    failures += assert_regex("local.tab_prefix_removed", src, r"\.dcfw-tab::before", must_match=False)
+    failures += assert_contains("local.match_wide_glob", src, "@match        http://*/*")
+    failures += assert_contains("local.bridge_host_placeholder", src, "__REMOTE_BRIDGE_HOST__")
+    failures += assert_contains("local.bridge_host_gm_key", src, "__bridge_remote_host__")
     # 9) statusbar 内部子元素（mode/badge/page）背景/边框/圆角都被覆盖为透明
     failures += assert_contains("local.mode_badge_in_statusbar_transparent", src, ".dcfw-statusbar-cell .dcfw-mode-badge {")
     failures += assert_contains("local.bridge_badge_in_statusbar_transparent", src, ".dcfw-statusbar-cell .dcfw-bridge-badge {")
@@ -171,7 +175,7 @@ def test_remote_fix() -> list[str]:
     failures = []
     src = read_js(REMOTE_JS)
 
-    failures += assert_contains("remote.version", src, "@version      0.3.7-remote")
+    failures += assert_contains("remote.version", src, "@version      0.3.8-remote")
 
     # v0.3.3-remote 修复 changelog
     failures += assert_contains("remote.changelog_v033", src, "★ 0.3.3-remote 修复 Firefox 上点 FAB 直接闪退的真根因")
@@ -193,11 +197,15 @@ def test_remote_fix() -> list[str]:
     failures += assert_contains("remote.robot_official_banner", src, 'btn.innerHTML = \'<pre class="dcfw-fab-robot" aria-hidden="true"> ▐▛███▜▌\\n▝▜█████▛▘\\n  ▘▘ ▝▝</pre>\'')
     failures += assert_contains("remote.statusbar_html", src, '<div class="dcfw-statusbar">')
     failures += assert_contains("remote.titlebar_right_removed", src, 'class="dcfw-titlebar-right"', must_exist=False)
-    # 拟终端 prompt 链（remote 与 local 同步）
+    # 拟终端 prompt 链（remote 与 local 同步；0.3.8 移除 tab ▎ 前缀）
     failures += assert_contains("remote.title_block_cursor", src, 'content: "▌"')
     failures += assert_contains("remote.statusbar_prompt_symbol", src, "<span class=\"dcfw-statusbar-prompt\">▸</span>")
     failures += assert_contains("remote.statusbar_separator", src, 'content: "│"')
-    failures += assert_contains("remote.tab_bar_prefix", src, 'content: "▎"')
+    failures += assert_regex("remote.tab_prefix_removed", src, r"\.dcfw-tab::before", must_match=False)
+    # v0.3.8: @match 宽化 + 占位符 bridge host
+    failures += assert_contains("remote.match_wide_glob", src, "@match        http://*/*")
+    failures += assert_contains("remote.bridge_host_placeholder", src, "__REMOTE_BRIDGE_HOST__")
+    failures += assert_contains("remote.bridge_host_gm_key", src, "__bridge_remote_host__")
 
     failures += assert_regex("remote.start_async", src, r"async function start\(\)")
     m = re.search(r"await detectBridge\(\);\s*\n\s*await bootstrap\(\);", src)
