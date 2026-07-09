@@ -74,9 +74,9 @@ def test_local_fix() -> list[str]:
     failures += assert_contains("local.changelog_v036", src, "★ 0.3.6 FAB 机器人像素画重设计 + 跳动动画修复")
     failures += assert_contains("local.no_close_icon", src, "// ★ 0.3.5: 不再切到 \"✕\" — 机器人保持显示")
 
-    # 7) v0.3.7 标题栏拆两行 + FAB 机器人中轴对齐（v0.3.6 风格的稳定设计）
-    failures += assert_contains("local.changelog_v037", src, "★ 0.3.7 标题栏拆两行 + FAB 机器人中轴对齐")
-    failures += assert_contains("local.robot_centered_art", src, 'btn.innerHTML = \'<pre class="dcfw-fab-robot" aria-hidden="true">▄▀▀▀▀▄\\n█▀  ▀█\\n▀▄▄▄▄▀</pre>\'')
+    # 7) v0.3.7 标题栏拆两行 + FAB 用 Claude Code 官方 banner 像素画
+    failures += assert_contains("local.changelog_v037", src, "★ 0.3.7 标题栏拆两行 + FAB 用 Claude Code 官方 banner")
+    failures += assert_contains("local.robot_official_banner", src, 'btn.innerHTML = \'<pre class="dcfw-fab-robot" aria-hidden="true"> ▐▛███▜▌\\n▝▜█████▛▘\\n  ▘▘ ▝▝</pre>\'')
     failures += assert_contains("local.robot_font_variant_emoji", src, "font-variant-emoji: text")
     failures += assert_contains("local.statusbar_css", src, ".dcfw-statusbar {")
     failures += assert_contains("local.statusbar_html", src, '<div class="dcfw-statusbar">')
@@ -179,9 +179,9 @@ def test_remote_fix() -> list[str]:
     # v0.3.6-remote 像素画重设计
     failures += assert_contains("remote.changelog_v036", src, "★ 0.3.6-remote FAB 像素画重设计 + 跳动动画")
 
-    # v0.3.7-remote 标题栏拆两行 + FAB 机器人中轴对齐
-    failures += assert_contains("remote.changelog_v037", src, "★ 0.3.7-remote 标题栏拆两行 + FAB 机器人中轴对齐")
-    failures += assert_contains("remote.robot_centered_art", src, 'btn.innerHTML = \'<pre class="dcfw-fab-robot" aria-hidden="true">▄▀▀▀▀▄\\n█▀  ▀█\\n▀▄▄▄▄▀</pre>\'')
+    # v0.3.7-remote 标题栏拆两行 + FAB 用 Claude Code 官方 banner
+    failures += assert_contains("remote.changelog_v037", src, "★ 0.3.7-remote 标题栏拆两行 + FAB 用 Claude Code 官方 banner")
+    failures += assert_contains("remote.robot_official_banner", src, 'btn.innerHTML = \'<pre class="dcfw-fab-robot" aria-hidden="true"> ▐▛███▜▌\\n▝▜█████▛▘\\n  ▘▘ ▝▝</pre>\'')
     failures += assert_contains("remote.statusbar_html", src, '<div class="dcfw-statusbar">')
     failures += assert_contains("remote.titlebar_right_removed", src, 'class="dcfw-titlebar-right"', must_exist=False)
 
