@@ -48,8 +48,8 @@ def test_local_fix() -> list[str]:
     failures = []
     src = read_js(LOCAL_JS)
 
-    # 1) 版本号已 bump 到 0.3.5（v0.3.1 race + v0.3.2 overlay + v0.3.4 auto-update + v0.3.5 UI）
-    failures += assert_contains("local.version", src, "@version      0.3.5")
+    # 1) 版本号已 bump 到 0.3.6（v0.3.1 race + v0.3.2 overlay + v0.3.4 auto-update + v0.3.5/0.3.6 UI）
+    failures += assert_contains("local.version", src, "@version      0.3.6")
 
     # 2) v0.3.1 race condition 修复说明注释存在
     failures += assert_contains("local.changelog_v031", src, "★ 0.3.1 修复 v0.3.0 启动 race condition")
@@ -63,13 +63,18 @@ def test_local_fix() -> list[str]:
     failures += assert_contains("local.downloadURL", src, "@downloadURL  https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window.user.js")
     failures += assert_contains("local.homepageURL", src, "@homepageURL  https://github.com/liangzhi879-a11y/dify-helper")
 
-    # 5) v0.3.5 UI 优化
+    # 5) v0.3.5 UI 优化（titlebar 单行化 + 跳动动画）
     failures += assert_contains("local.changelog_v035", src, "★ 0.3.5 面板 titlebar 单行化 + FAB 机器人居中修复 + 跳动动画")
     failures += assert_contains("local.titlebar_nowrap", src, "flex-wrap: nowrap;     /* ★ 0.3.5: 强制单行")
-    failures += assert_contains("local.robot_inline_block", src, "display: inline-block;\n      transform: translateX(-0.5px);")
     failures += assert_contains("local.robot_jump_keyframes", src, "@keyframes dcfw-robot-jump")
     failures += assert_contains("local.host_panel_open_class", src, 'hostEl.classList.add("dcfw-panel-open")')
     failures += assert_contains("local.host_class_set", src, 'hostEl.className = "dcfw-host"')
+
+    # 6) v0.3.6 像素画重设计（半角 block 元素）+ 去除 "✕" 切换
+    failures += assert_contains("local.changelog_v036", src, "★ 0.3.6 FAB 机器人像素画重设计 + 跳动动画修复")
+    failures += assert_contains("local.robot_new_art", src, 'btn.innerHTML = \'<pre class="dcfw-fab-robot" aria-hidden="true">▄▀▀▀▀▄\\n█▀  ▀█\\n▀▀▀▀▀▀</pre>\'')
+    # 关键修复：togglePanel 不应再切 "✕"
+    failures += assert_contains("local.no_close_icon", src, "// ★ 0.3.5: 不再切到 \"✕\" — 机器人保持显示")
 
     # 3.5) togglePanel 必须只有 1 个定义（防 0.3.2 remote 翻车的"重复定义 + 缩进错乱"复发）
     #    只数代码中的定义，不数 changelog 注释里提到的字符串
@@ -142,7 +147,7 @@ def test_remote_fix() -> list[str]:
     failures = []
     src = read_js(REMOTE_JS)
 
-    failures += assert_contains("remote.version", src, "@version      0.3.5-remote")
+    failures += assert_contains("remote.version", src, "@version      0.3.6-remote")
 
     # v0.3.3-remote 修复 changelog
     failures += assert_contains("remote.changelog_v033", src, "★ 0.3.3-remote 修复 Firefox 上点 FAB 直接闪退的真根因")
@@ -155,6 +160,10 @@ def test_remote_fix() -> list[str]:
     failures += assert_contains("remote.changelog_v035", src, "★ 0.3.5-remote 面板 titlebar 单行化 + FAB 机器人居中修复 + 跳动动画")
     failures += assert_contains("remote.titlebar_nowrap", src, "flex-wrap: nowrap;     /* ★ 0.3.5-remote: 强制单行")
     failures += assert_contains("remote.host_panel_open_class", src, 'hostEl.classList.add("dcfw-panel-open")')
+
+    # v0.3.6-remote 像素画重设计
+    failures += assert_contains("remote.changelog_v036", src, "★ 0.3.6-remote FAB 像素画重设计 + 跳动动画")
+    failures += assert_contains("remote.robot_new_art", src, 'btn.innerHTML = \'<pre class="dcfw-fab-robot" aria-hidden="true">▄▀▀▀▀▄\\n█▀  ▀█\\n▀▀▀▀▀▀</pre>\'')
     failures += assert_regex("remote.start_async", src, r"async function start\(\)")
     m = re.search(r"await detectBridge\(\);\s*\n\s*await bootstrap\(\);", src)
     if not m:

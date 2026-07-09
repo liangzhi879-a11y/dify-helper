@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window (Remote Edition)
 // @namespace    https://github.com/dify-helper
-// @version      0.3.5-remote
+// @version      0.3.6-remote
 // @description  远程访问 Dify 专用版：适配 http://REDACTED_HOST:9980/，桥接服务自动探测
 // @author       dify-helper
 // @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
@@ -10,6 +10,10 @@
 // @supportURL   https://github.com/liangzhi879-a11y/dify-helper/issues
 // @match        http://REDACTED_HOST:9980/*
 // @connect      REDACTED_HOST
+// ★ 0.3.6-remote FAB 像素画重设计 + 跳动动画（与本地版同步）：
+//   1) 像素画：纯半角 block 元素 (▄▀█)，3 行各 6 字符，跨字体稳定对齐
+//   2) 跳动动画：translateY(-4px) 1.2s 循环，纯垂直跳动
+//   3) togglePanel 不再切 "✕"，FAB 始终保持机器人（关闭按钮在 titlebar）
 // ★ 0.3.5-remote 面板 titlebar 单行化 + FAB 机器人居中修复 + 跳动动画（与本地版同步）：
 //   1) titlebar: flex-wrap:nowrap + 标题 flex:1+min-width:0(ellipsis) + 右簇 flex:0 0 auto
 //   2) FAB 像素画: text-align:left + display:inline-block + translateX(-0.5px) 居中补偿
@@ -824,7 +828,7 @@
     const btn = document.createElement("div");
     btn.id = "dcfw-fab";
     // ★ 0.2.17: ClaudeCode 小机器人像素画（3 行字符画）
-    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▐▛███▜▌\n▝▜█████▛▘\n  ▘▘ ▝▝</pre>';
+    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▄▀▀▀▀▄\n█▀  ▀█\n▀▀▀▀▀▀</pre>';
     btn.title = "Dify Claude 助手（拖拽移动位置）";
     // 不在这里注册 click，由 setupFabDrag() 统一管理（避免与拖拽吞 click 冲突）
     fabWrap.appendChild(btn);
@@ -908,7 +912,7 @@
         panel.classList.add("open");
         // ★ 0.3.5-remote: host 加 dcfw-panel-open class → 触发 FAB 机器人跳动
         if (hostEl) hostEl.classList.add("dcfw-panel-open");
-        fab.innerHTML = "✕";
+        // ★ 0.3.5-remote: 不再切到 "✕" — 机器人保持显示，关闭按钮在 titlebar
         if (!state.sessionId) {
           initSession();
         }
@@ -921,8 +925,6 @@
         panel.classList.remove("open");
         // ★ 0.3.5-remote: 移除 host class → FAB 机器人回到静态
         if (hostEl) hostEl.classList.remove("dcfw-panel-open");
-        // ★ 0.2.17: 关闭时恢复 ClaudeCode 机器人像素画
-        fab.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▐▛███▜▌\n▝▜█████▛▘\n  ▘▘ ▝▝</pre>';
       }
     } catch (e) {
       _recordFatal("togglePanel", e);
@@ -980,30 +982,27 @@
       justify-content: center;
     }
     /* ★ 0.2.17: ClaudeCode 机器人像素画（3 行 unicode 字符画）
-       ★ 0.3.5-remote: 居中修复 —— 改 text-align:left + inline-block +
-         translateX(-0.5px) 补偿 unicode box-drawing 半角/全角混排 */
+       ★ 0.3.5-remote: 改用纯半角 block 元素 (▄▀█)，3 行各 6 字符，跨字体稳定 */
     .dcfw-fab-robot {
       margin: 0; padding: 0;
       font-family: "SF Mono", "Monaco", "Menlo", "Consolas", "Courier New", monospace;
-      font-size: 8px; line-height: 9px; letter-spacing: 0;
+      font-size: 9px; line-height: 10px; letter-spacing: 0;
       color: #fff;
       text-align: left;
       white-space: pre;
       pointer-events: none;
       display: inline-block;
-      transform: translateX(-0.5px);
     }
-    /* ★ 0.3.5-remote: 跳动动画 —— host 加 dcfw-panel-open 时循环 */
+    /* ★ 0.3.5-remote: 跳动动画 */
     @keyframes dcfw-robot-jump {
-      0%, 100% { transform: translateX(-0.5px) translateY(0); }
-      50%      { transform: translateX(-0.5px) translateY(-3px); }
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-4px); }
     }
     .dcfw-host.dcfw-panel-open #dcfw-fab .dcfw-fab-robot {
       animation: dcfw-robot-jump 1.2s ease-in-out infinite;
     }
     .dcfw-host:not(.dcfw-panel-open) #dcfw-fab .dcfw-fab-robot {
       animation: none;
-      transform: translateX(-0.5px);
     }
     #dcfw-fab:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(204, 120, 92, 0.55); }
     #dcfw-fab.dragging { cursor: grabbing; transition: none; }

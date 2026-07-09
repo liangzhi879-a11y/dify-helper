@@ -1,13 +1,21 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window
 // @namespace    https://github.com/dify-helper
-// @version      0.3.5
+// @version      0.3.6
 // @description  本机 Dify 调试专用版：与本地 bridge 配合，悬浮 Claude CLI
 // @author       dify-helper
 // @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
 // @updateURL    https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window.user.js
 // @downloadURL  https://raw.githubusercontent.com/liangzhi879-a11y/dify-helper/main/tampermonkey/dify-claude-floating-window.user.js
 // @supportURL   https://github.com/liangzhi879-a11y/dify-helper/issues
+// ★ 0.3.6 FAB 机器人像素画重设计 + 跳动动画修复（用户报 0.3.5 翻车）：
+//   1) 像素画：原 "▐▛███▜▌\n▝▜█████▛▘\n  ▘▘ ▝▝" 改用纯半角 block
+//     "▄▀▀▀▀▄\n█▀  ▀█\n▀▀▀▀▀▀" —— 3 行各 6 字符，全用 ▄▀█
+//     (跨 monospace 字体稳定半角)，消除腿视觉偏右问题
+//   2) 跳动动画：translateY(-4px) 1.2s 循环（之前 translateX(-0.5px) 加上
+//     translateY 混用，逻辑混乱）；现在仅 translateY，纯垂直跳动
+//   3) 关键修复：togglePanel 不再切 fab.innerHTML = "✕" —— 面板打开时
+//     FAB 保持机器人形态（跳动），关闭按钮已在 titlebar 右上角，不需 ❌
 // ★ 0.3.5 面板 titlebar 单行化 + FAB 机器人居中修复 + 跳动动画：
 //   1) titlebar: 加 flex-wrap: nowrap + 标题 flex:1 + min-width:0 (ellipsis)，
 //      右侧 6 个徽章 flex:0 0 auto，强制单行避免两行换行
@@ -826,7 +834,7 @@
     const btn = document.createElement("div");
     btn.id = "dcfw-fab";
     // ★ 0.2.17: ClaudeCode 小机器人像素画（3 行字符画）
-    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▐▛███▜▌\n▝▜█████▛▘\n  ▘▘ ▝▝</pre>';
+    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▄▀▀▀▀▄\n█▀  ▀█\n▀▀▀▀▀▀</pre>';
     btn.title = "Dify Claude 助手（拖拽移动位置）";
     // 不在这里注册 click，由 setupFabDrag() 统一管理（避免与拖拽吞 click 冲突）
     fabWrap.appendChild(btn);
@@ -914,7 +922,8 @@
         panel.classList.add("open");
         // ★ 0.3.5: host 加 dcfw-panel-open class → 触发 FAB 机器人跳动动画
         if (hostEl) hostEl.classList.add("dcfw-panel-open");
-        fab.innerHTML = "✕";
+        // ★ 0.3.5: 不再切到 "✕" — 机器人保持显示，关闭按钮在 titlebar 已存在
+        // fab.innerHTML 保持初始机器人像素画
         if (!state.sessionId) {
           initSession();
         }
@@ -927,8 +936,7 @@
         panel.classList.remove("open");
         // ★ 0.3.5: 移除 host class → FAB 机器人回到静态
         if (hostEl) hostEl.classList.remove("dcfw-panel-open");
-        // ★ 0.2.17: 关闭时恢复 ClaudeCode 机器人像素画
-        fab.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▐▛███▜▌\n▝▜█████▛▘\n  ▘▘ ▝▝</pre>';
+        // fab.innerHTML 保持机器人像素画（不切回 ✕，因为我们让机器人承担全部视觉）
       }
     } catch (e) {
       _recordFatal("togglePanel", e);
@@ -986,37 +994,33 @@
       justify-content: center;
     }
     /* ★ 0.2.17: ClaudeCode 机器人像素画（3 行 unicode 字符画）
-       ★ 0.3.5: 居中修复 —— 之前用 text-align: center 但 unicode box-drawing
-         字符 (▐▛▜▌▝▘) 在不同 monospace 字体里宽度不一致（半角 / 全角
-         混排），导致腿（"▘▘ ▝▝"）视觉偏右。改用 fixed-width 容器 +
-         负 letter-spacing 微调 + transform translateX 居中补偿。*/
+       ★ 0.3.5: 改用纯半角 block 元素 (▄▀█) —— 之前的字符画混了
+         ▐▛▜▌▝▘ 等 box-drawing 字符，这些在不同 monospace 字体里
+         半角/全角宽度混排导致腿视觉偏右。新设计全用 ▄▀█，所有 3 行
+         都是 6 个字符，跨字体稳定对齐。 */
     .dcfw-fab-robot {
       margin: 0;
       padding: 0;
       font-family: "SF Mono", "Monaco", "Menlo", "Consolas", "Courier New", monospace;
-      font-size: 8px;
-      line-height: 9px;
+      font-size: 9px;
+      line-height: 10px;
       letter-spacing: 0;
       color: #fff;
-      text-align: left;          /* 改 left + 容器居中补偿，比 text-align:center 更稳 */
+      text-align: left;
       white-space: pre;
       pointer-events: none;
       display: inline-block;
-      transform: translateX(-0.5px); /* 微调：让腿"▘▘ ▝▝"看起来跟头"▐▛███▜▌"对齐 */
     }
-    /* ★ 0.3.5: 容器 inline-block 居中 + 跳动动画
-       默认（host 不带 dcfw-panel-open class）= 静态；带 class = 跳动。
-       用 host class 切换避免 body 跳出 shadow DOM 作用域。*/
+    /* ★ 0.3.5: 跳动动画 —— host 加 dcfw-panel-open 时循环 */
     @keyframes dcfw-robot-jump {
-      0%, 100% { transform: translateX(-0.5px) translateY(0); }
-      50%      { transform: translateX(-0.5px) translateY(-3px); }
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-4px); }
     }
     .dcfw-host.dcfw-panel-open #dcfw-fab .dcfw-fab-robot {
       animation: dcfw-robot-jump 1.2s ease-in-out infinite;
     }
     .dcfw-host:not(.dcfw-panel-open) #dcfw-fab .dcfw-fab-robot {
       animation: none;
-      transform: translateX(-0.5px);
     }
     #dcfw-fab:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(204, 120, 92, 0.55); }
     #dcfw-fab.dragging { cursor: grabbing; transition: none; }
