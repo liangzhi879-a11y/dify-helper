@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window (Remote Edition)
 // @namespace    https://github.com/dify-helper
-// @version      0.3.6-remote
+// @version      0.3.7-remote
 // @description  远程访问 Dify 专用版：适配 http://REDACTED_HOST:9980/，桥接服务自动探测
 // @author       dify-helper
 // @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
@@ -10,6 +10,10 @@
 // @supportURL   https://github.com/liangzhi879-a11y/dify-helper/issues
 // @match        http://REDACTED_HOST:9980/*
 // @connect      REDACTED_HOST
+// ★ 0.3.7-remote 标题栏拆两行 + 机器人加眼睛（与本地版同步）：
+//   1) 标题栏（第一行）只剩"标题 + 👤 + ✕"三项；其余徽章下移到第二行
+//   2) 第二行 = .dcfw-statusbar，三 cell：权限(mode) / Agent(status+bridge) / URL(page)
+//   3) FAB 像素画加 ● 眼睛 "▄▀▀▀▀▄\n█▀●▀●█\n▀▄▄▄▄▀"
 // ★ 0.3.6-remote FAB 像素画重设计 + 跳动动画（与本地版同步）：
 //   1) 像素画：纯半角 block 元素 (▄▀█)，3 行各 6 字符，跨字体稳定对齐
 //   2) 跳动动画：translateY(-4px) 1.2s 循环，纯垂直跳动
@@ -828,7 +832,7 @@
     const btn = document.createElement("div");
     btn.id = "dcfw-fab";
     // ★ 0.2.17: ClaudeCode 小机器人像素画（3 行字符画）
-    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▄▀▀▀▀▄\n█▀  ▀█\n▀▀▀▀▀▀</pre>';
+    btn.innerHTML = '<pre class="dcfw-fab-robot" aria-hidden="true">▄▀▀▀▀▄\n█▀●▀●█\n▀▄▄▄▄▀</pre>';
     btn.title = "Dify Claude 助手（拖拽移动位置）";
     // 不在这里注册 click，由 setupFabDrag() 统一管理（避免与拖拽吞 click 冲突）
     fabWrap.appendChild(btn);
@@ -1020,19 +1024,49 @@
     #dcfw-panel.open { display: flex; }
 
     .dcfw-titlebar {
-      padding: 8px 10px; background: #CC785C;
+      padding: 6px 10px; background: #CC785C;
       color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 8px;
       cursor: move; user-select: none; font-size: 13px; font-weight: 600;
       touch-action: none;
       position: relative;    /* ★ 0.2.8: 给 mode popover 绝对定位锚点 */
-      flex-wrap: nowrap;     /* ★ 0.3.5-remote: 强制单行 */
+      flex-wrap: nowrap;
     }
-    .dcfw-titlebar > span:first-child {
+    .dcfw-titlebar-title {
       flex: 1 1 auto; min-width: 0; overflow: hidden;
       text-overflow: ellipsis; white-space: nowrap;
     }
+    .dcfw-titlebar-actions { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
     .dcfw-titlebar-status { font-size: 11px; opacity: 0.9; font-weight: 400; }
-    .dcfw-titlebar-right { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+    /* ★ 0.3.7-remote: 第二行状态栏 —— 权限 / Agent / URL 三列 */
+    .dcfw-statusbar {
+      display: flex; align-items: stretch; gap: 1px;
+      background: rgba(0,0,0,0.12);
+      padding: 0; font-size: 11px;
+      color: #fff;
+      user-select: none;
+    }
+    .dcfw-statusbar-cell {
+      flex: 0 0 auto;
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 10px;
+      background: #B86A50;
+      cursor: pointer;
+      min-width: 0;
+    }
+    .dcfw-statusbar-cell.dcfw-statusbar-cell-grow { flex: 1 1 auto; }
+    .dcfw-statusbar-cell:hover  { background: #A85F47; }
+    .dcfw-statusbar-label {
+      font-size: 10px; opacity: 0.7; font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .dcfw-statusbar-cell .dcfw-mode-badge {
+      font-size: 11px; padding: 1px 6px; border-radius: 8px;
+    }
+    .dcfw-statusbar-cell .dcfw-page-badge {
+      flex: 1 1 auto; min-width: 0; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
+      font-size: 11px; opacity: 0.95;
+    }
 
     /* ★ 0.2.7/0.2.8: Claude 模式徽章（0.2.8 起兼任下拉触发器，删掉原生 select） */
     .dcfw-mode-badge {
@@ -1306,9 +1340,9 @@
       cursor: help; user-select: none; transition: background-color 0.3s, color 0.3s;
       margin-left: 6px;
     }
-    .dcfw-bridge-badge.probing { background: #fef3c7; color: #92400e; }
-    .dcfw-bridge-badge.connected { background: #d1fae5; color: #065f46; }
-    .dcfw-bridge-badge.failed { background: #fee2e2; color: #991b1b; }
+    .dcfw-bridge-badge.probing { background: rgba(254, 243, 199, 0.18); color: #FEF3C7; }
+    .dcfw-bridge-badge.connected { background: rgba(209, 250, 229, 0.18); color: #D1FAE5; }
+    .dcfw-bridge-badge.failed { background: rgba(254, 226, 226, 0.18); color: #FEE2E2; }
     .dcfw-bridge-badge:hover { filter: brightness(0.95); }
     .dcfw-bridge-dot {
       display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: currentColor;
@@ -1495,29 +1529,41 @@
 
   const PANEL_HTML = `
     <div class="dcfw-titlebar">
-      <span>Dify Claude 助手</span>
-      <span class="dcfw-titlebar-right">
-        <span class="dcfw-mode-badge mode-bypass" id="dcfw-mode-badge" title="点击切换 Claude 权限模式">⚡ AUTO</span>
+      <span class="dcfw-titlebar-title">Dify Claude 助手</span>
+      <span class="dcfw-titlebar-actions">
+        <button class="dcfw-user-badge" id="dcfw-user-badge" title="我是谁（点击切换 / 改 display_name）">👤</button>
+        <button class="dcfw-close-btn" id="dcfw-close-btn" title="关闭面板">✕</button>
+      </span>
+    </div>
+    <!-- ★ 0.3.7-remote: 第二行状态栏 —— mode / agent status / url 三列 -->
+    <div class="dcfw-statusbar">
+      <div class="dcfw-statusbar-cell" id="dcfw-mode-cell" title="点击切换 Claude 权限模式">
+        <span class="dcfw-statusbar-label">权限</span>
+        <span class="dcfw-mode-badge mode-bypass" id="dcfw-mode-badge">⚡ AUTO</span>
+      </div>
+      <div class="dcfw-statusbar-cell" id="dcfw-agent-cell" title="Agent 连接状态">
+        <span class="dcfw-statusbar-label">Agent</span>
         <span class="dcfw-titlebar-status" id="dcfw-status" title="未连接">○</span>
         <span class="dcfw-bridge-badge probing" id="dcfw-bridge-badge" title="正在探测 bridge 可用地址">
           <span class="dcfw-bridge-dot pulse"></span>
-          <span id="dcfw-bridge-badge-text">探测中...</span>
+          <span id="dcfw-bridge-badge-text">探测中</span>
         </span>
-        <!-- ★ 0.2.14: 显式关闭按钮（替代 0.2.13 之前的"点击外部关闭"行为） -->
-        <!-- ★ 0.2.16: 当前页面标题徽章（URL + title + app_id 自动捕获） -->
+      </div>
+      <div class="dcfw-statusbar-cell dcfw-statusbar-cell-grow" id="dcfw-url-cell" title="当前页面 URL 检测">
+        <span class="dcfw-statusbar-label">URL</span>
         <span class="dcfw-page-badge" id="dcfw-page-badge" title="尚未捕获页面">—</span>
-        <!-- ★ 0.3.0: 👤 用户身份徽章（点击弹 display_name 选择器） -->
-        <button class="dcfw-user-badge" id="dcfw-user-badge" title="我是谁（点击切换 / 改 display_name）">👤</button>
-        <button class="dcfw-close-btn" id="dcfw-close-btn" title="关闭面板">✕</button>
-        <!-- ★ 0.2.8: 徽章内嵌下拉，点 badge 触发 -->
-        <div class="dcfw-mode-popover" id="dcfw-mode-popover" style="display:none;">
-          <div class="dcfw-mode-popover-item" data-mode="bypass">⚡ AUTO <span class="dcfw-mode-popover-desc">自动批准全部</span></div>
-          <div class="dcfw-mode-popover-item" data-mode="plan">📋 PLAN <span class="dcfw-mode-popover-desc">先规划后执行</span></div>
-          <div class="dcfw-mode-popover-item" data-mode="acceptEdits">✏️ EDIT <span class="dcfw-mode-popover-desc">仅自动批准编辑</span></div>
-          <div class="dcfw-mode-popover-item" data-mode="default">🔒 SAFE <span class="dcfw-mode-popover-desc">每次确认</span></div>
-        </div>
-        <!-- ★ 0.3.0: 👤 用户 popover（display_name 选择器） -->
-        <div class="dcfw-user-popover" id="dcfw-user-popover" style="display:none;">
+      </div>
+    </div>
+    <!-- ★ 0.2.8: 徽章内嵌下拉，点 badge 触发 -->
+    <div class="dcfw-mode-popover-anchor" style="position:relative;">
+      <div class="dcfw-mode-popover" id="dcfw-mode-popover" style="display:none;">
+        <div class="dcfw-mode-popover-item" data-mode="bypass">⚡ AUTO <span class="dcfw-mode-popover-desc">自动批准全部</span></div>
+        <div class="dcfw-mode-popover-item" data-mode="plan">📋 PLAN <span class="dcfw-mode-popover-desc">先规划后执行</span></div>
+        <div class="dcfw-mode-popover-item" data-mode="acceptEdits">✏️ EDIT <span class="dcfw-mode-popover-desc">仅自动批准编辑</span></div>
+        <div class="dcfw-mode-popover-item" data-mode="default">🔒 SAFE <span class="dcfw-mode-popover-desc">每次确认</span></div>
+      </div>
+      <!-- ★ 0.3.0: 👤 用户 popover（display_name 选择器） -->
+      <div class="dcfw-user-popover" id="dcfw-user-popover" style="display:none;">
           <div class="dcfw-user-popover-title">我是谁（display_name）</div>
           <div class="dcfw-user-popover-info" id="dcfw-user-popover-info">—</div>
           <div class="dcfw-user-popover-candidates" id="dcfw-user-popover-candidates"></div>
@@ -1532,7 +1578,7 @@
             <button id="dcfw-user-popover-clearbtn" title="清除当前 display_name">清除 display_name（仅靠 IP+UA 区分）</button>
           </div>
         </div>
-      </span>
+      </div>
     </div>
     <div class="dcfw-tabs">
       <div class="dcfw-tab active" data-tab="chat">对话</div>
@@ -1741,6 +1787,44 @@
       modeBadge.addEventListener("click", (e) => {
         e.stopPropagation();
         toggleModePopover();
+      });
+    }
+
+    // ★ 0.3.7-remote: statusbar 三 cell —— 整 cell 可点
+    const modeCell = shadowRoot.getElementById("dcfw-mode-cell");
+    if (modeCell) {
+      modeCell.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleModePopover();
+      });
+    }
+    const agentCell = shadowRoot.getElementById("dcfw-agent-cell");
+    if (agentCell) {
+      agentCell.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (typeof detectBridge === "function") {
+          addSystemMessage("🔄 正在重新探测 bridge...");
+          detectBridge();
+        }
+      });
+    }
+    const urlCell = shadowRoot.getElementById("dcfw-url-cell");
+    if (urlCell) {
+      urlCell.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const ctx = state.activePageContext || {};
+        const url = ctx.url || location.href;
+        const shown = url.length > 80 ? url.slice(0, 77) + "..." : url;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url);
+            addSystemMessage(`🔗 已复制 URL：${shown}`);
+          } else {
+            addSystemMessage(`🔗 当前 URL：${shown}`);
+          }
+        } catch (err) {
+          addSystemMessage(`🔗 当前 URL：${shown}`);
+        }
       });
     }
 
@@ -1967,7 +2051,7 @@
       //   ✕ click 同时触发 pointerdown → setPointerCapture，click 不再触发 toggle
       // 之前缺这行：点 <select> 触发 setPointerCapture，抑制原生下拉 + 改写 panel.style.left/top，
       // 用户视觉上看到「闪退」（page 抖一下，select 不展开）
-      if (e.target.closest("select, button, input, .dcfw-mode-badge, .dcfw-bridge-badge, .dcfw-mode-popover, .dcfw-close-btn")) return;
+      if (e.target.closest("select, button, input, .dcfw-mode-badge, .dcfw-bridge-badge, .dcfw-mode-popover, .dcfw-close-btn, .dcfw-statusbar-cell")) return;
       activePointer = e.pointerId;
       startX = e.clientX;
       startY = e.clientY;
