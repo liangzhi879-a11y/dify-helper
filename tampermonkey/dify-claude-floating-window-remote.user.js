@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window (Remote Edition)
 // @namespace    https://github.com/dify-helper
-// @version      0.3.8-remote
+// @version      0.3.9-remote
 // @description  远程访问 Dify 专用版：适配 http://REDACTED_HOST:9980/，桥接服务自动探测
 // @author       dify-helper
 // @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
@@ -27,6 +27,8 @@
 //   3) BRIDGE_CANDIDATES 占位符 __REMOTE_BRIDGE_HOST__ — 公网 IP 不入仓
 //      用户在 Tampermonkey 脚本值里 GM_setValue("__bridge_remote_host__", "<公网 IP>")
 //      即可启动时自动注入；未配置只走 loopback fallback
+//   4) gmFetch.onerror 包 Error — 之前直接 reject(err)，上游 e.message||e 走到 e 分支
+//      → String(err) === "[object Object]"，错误消息不可读
 // ★ 0.3.6-remote FAB 像素画重设计 + 跳动动画（与本地版同步）：
 //   1) 像素画：纯半角 block 元素 (▄▀█)，3 行各 6 字符，跨字体稳定对齐
 //   2) 跳动动画：translateY(-4px) 1.2s 循环，纯垂直跳动
@@ -650,7 +652,11 @@
             resolve(resp);
           },
           onerror: function (err) {
-            reject(err);
+            // ★ 0.3.8-remote: GM_xmlhttpRequest 传 raw err（{error, status} 对象），
+            //   直接 reject 会让上游 e.message || e 走到 e 分支 → toString "[object Object]"
+            //   包成 Error 让上游能拿到 .message
+            const msg = (err && (err.error || err.message)) || "network error";
+            reject(new Error("GM network error: " + msg + " (" + url + ")"));
           },
           ontimeout: function () {
             reject(new Error("GM_xmlhttpRequest timeout: " + url));
@@ -2443,7 +2449,7 @@
       addSystemMessage("会话已就绪。输入消息或 / 查看指令。");
     } catch (e) {
       updateStatus("连接失败");
-      addErrorMessage("无法连接 bridge 服务: " + (e.message || e));
+      addErrorMessage("无法连接 bridge 服务: " + (e && e.message ? e.message : String(e)));
     }
   }
 
@@ -2520,7 +2526,7 @@
       }
       scrollMessagesToBottom();
     } catch (e) {
-      addErrorMessage("加载历史失败: " + (e.message || e));
+      addErrorMessage("加载历史失败: " + (e && e.message ? e.message : String(e)));
     }
   }
 
@@ -2530,7 +2536,7 @@
       const resp = await gmFetchJSON("POST", CONFIG.BRIDGE_URL + "/sessions", {});
       return resp.session_id || null;
     } catch (e) {
-      addErrorMessage("新建会话失败: " + (e.message || e));
+      addErrorMessage("新建会话失败: " + (e && e.message ? e.message : String(e)));
       return null;
     }
   }
@@ -2550,7 +2556,7 @@
       pushMRU(state.sessionId);
       await loadSessionList();
     } catch (e) {
-      addErrorMessage("重命名失败: " + (e.message || e));
+      addErrorMessage("重命名失败: " + (e && e.message ? e.message : String(e)));
     }
   }
 
@@ -2560,7 +2566,7 @@
     try {
       await gmFetch("DELETE", CONFIG.BRIDGE_URL + "/sessions/" + idToDelete);
     } catch (e) {
-      addErrorMessage("删除失败: " + (e.message || e));
+      addErrorMessage("删除失败: " + (e && e.message ? e.message : String(e)));
       return;
     }
     // 清理 draft
@@ -2784,7 +2790,7 @@
       const shown = MODE_LABELS[state.currentMode] || state.currentMode;
       addSystemMessage(`✅ 已切换到 ${shown}（Claude 子进程已重启）`);
     } catch (e) {
-      addErrorMessage("切换模式失败: " + (e.message || e));
+      addErrorMessage("切换模式失败: " + (e && e.message ? e.message : String(e)));
       // ★ 0.2.8: 失败时刷新徽章（保持旧 mode 显示）
       refreshModeBadge();
     } finally {
@@ -2915,7 +2921,7 @@
         setSending(false);
       }
     } catch (e) {
-      addErrorMessage("发送失败: " + (e.message || e));
+      addErrorMessage("发送失败: " + (e && e.message ? e.message : String(e)));
       setSending(false);
     }
   }
@@ -2963,7 +2969,7 @@
         }
       }
     } catch (e) {
-      addErrorMessage("本地指令失败: " + (e.message || e));
+      addErrorMessage("本地指令失败: " + (e && e.message ? e.message : String(e)));
     }
     setSending(false);
   }

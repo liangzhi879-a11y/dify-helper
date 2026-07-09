@@ -48,8 +48,8 @@ def test_local_fix() -> list[str]:
     failures = []
     src = read_js(LOCAL_JS)
 
-    # 1) 版本号已 bump 到 0.3.8
-    failures += assert_contains("local.version", src, "@version      0.3.8")
+    # 1) 版本号已 bump 到 0.3.9
+    failures += assert_contains("local.version", src, "@version      0.3.9")
 
     # 2) v0.3.1 race condition 修复说明注释存在
     failures += assert_contains("local.changelog_v031", src, "★ 0.3.1 修复 v0.3.0 启动 race condition")
@@ -88,6 +88,9 @@ def test_local_fix() -> list[str]:
     failures += assert_contains("local.match_wide_glob", src, "@match        http://*/*")
     failures += assert_contains("local.bridge_host_placeholder", src, "__REMOTE_BRIDGE_HOST__")
     failures += assert_contains("local.bridge_host_gm_key", src, "__bridge_remote_host__")
+    # 8c) v0.3.9: gmFetch.onerror 包 Error —— 之前 reject(raw err) → 上游 String(err) === "[object Object]"
+    failures += assert_contains("local.gmFetch_onerror_wrap_error", src, 'new Error("GM network error:')
+    failures += assert_regex("local.no_e_message_or_e_pattern", src, r"\(e\.message \|\| e\)", must_match=False)
     # 9) statusbar 内部子元素（mode/badge/page）背景/边框/圆角都被覆盖为透明
     failures += assert_contains("local.mode_badge_in_statusbar_transparent", src, ".dcfw-statusbar-cell .dcfw-mode-badge {")
     failures += assert_contains("local.bridge_badge_in_statusbar_transparent", src, ".dcfw-statusbar-cell .dcfw-bridge-badge {")
@@ -175,7 +178,7 @@ def test_remote_fix() -> list[str]:
     failures = []
     src = read_js(REMOTE_JS)
 
-    failures += assert_contains("remote.version", src, "@version      0.3.8-remote")
+    failures += assert_contains("remote.version", src, "@version      0.3.9-remote")
 
     # v0.3.3-remote 修复 changelog
     failures += assert_contains("remote.changelog_v033", src, "★ 0.3.3-remote 修复 Firefox 上点 FAB 直接闪退的真根因")
@@ -206,6 +209,8 @@ def test_remote_fix() -> list[str]:
     failures += assert_contains("remote.match_wide_glob", src, "@match        http://*/*")
     failures += assert_contains("remote.bridge_host_placeholder", src, "__REMOTE_BRIDGE_HOST__")
     failures += assert_contains("remote.bridge_host_gm_key", src, "__bridge_remote_host__")
+    failures += assert_contains("remote.gmFetch_onerror_wrap_error", src, 'new Error("GM network error:')
+    failures += assert_regex("remote.no_e_message_or_e_pattern", src, r"\(e\.message \|\| e\)", must_match=False)
 
     failures += assert_regex("remote.start_async", src, r"async function start\(\)")
     m = re.search(r"await detectBridge\(\);\s*\n\s*await bootstrap\(\);", src)
