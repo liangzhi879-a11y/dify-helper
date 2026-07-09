@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window (Remote Edition)
 // @namespace    https://github.com/dify-helper
-// @version      0.3.9-remote
+// @version      0.3.10-remote
 // @description  远程访问 Dify 专用版：适配 http://REDACTED_HOST:9980/，桥接服务自动探测
 // @author       dify-helper
 // @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
@@ -29,6 +29,9 @@
 //      即可启动时自动注入；未配置只走 loopback fallback
 //   4) gmFetch.onerror 包 Error — 之前直接 reject(err)，上游 e.message||e 走到 e 分支
 //      → String(err) === "[object Object]"，错误消息不可读
+// ★ 0.3.10-remote initSession 错误消息带上 BRIDGE 探测结果 + 远程配置提示：
+//   远程用户场景下，错误消息要直接告诉用户哪个候选失败了、错在哪。
+//   之前只有 "GM network error: network error (URL)"，看不出 GM 没配置或路由器没转发。
 // ★ 0.3.6-remote FAB 像素画重设计 + 跳动动画（与本地版同步）：
 //   1) 像素画：纯半角 block 元素 (▄▀█)，3 行各 6 字符，跨字体稳定对齐
 //   2) 跳动动画：translateY(-4px) 1.2s 循环，纯垂直跳动
@@ -2449,7 +2452,26 @@
       addSystemMessage("会话已就绪。输入消息或 / 查看指令。");
     } catch (e) {
       updateStatus("连接失败");
-      addErrorMessage("无法连接 bridge 服务: " + (e && e.message ? e.message : String(e)));
+      // ★ 0.3.10-remote: 把 bridge 探测结果也带出来 —— 远程用户常踩坑：
+      //   1) GM __bridge_remote_host__ 没配
+      //   2) 路由器 8002 端口转发没配
+      // 让用户一眼看清每个候选的探测状态
+      const probes = state.bridgeProbes || [];
+      const summary = probes.length === 0
+        ? "(尚未探测)"
+        : probes.map((p) => {
+            const status = p.status === "ok" ? "✅" : p.status === "fail" ? "❌" : "⏳";
+            return `${status} ${p.url} ${p.error ? "(" + p.error + ")" : ""}`;
+          }).join("\n  ");
+      const errMsg = (e && e.message) ? e.message : String(e);
+      addErrorMessage(
+        "无法连接 bridge 服务: " + errMsg + "\n\n" +
+        "BRIDGE 探测结果：\n  " + summary + "\n\n" +
+        "如果是远程访问，请：\n" +
+        "  1) 油猴 → 编辑此脚本 → Values 标签\n" +
+        "  2) 新增键 __bridge_remote_host__ = 你的服务器公网 IP\n" +
+        "  3) 路由器 8002 端口必须转发到服务器 LAN IP:8002"
+      );
     }
   }
 
