@@ -939,9 +939,13 @@
       document.removeEventListener("mousedown", _popoverDocClickHandler, true);
       _popoverDocClickHandler = null;
     }
-    if (_userPopoverDocClickHandler) {
-      document.removeEventListener("mousedown", _userPopoverDocClickHandler, true);
-      _userPopoverDocClickHandler = null;
+    if (_userPopoverShadowHandler) {
+      shadowRoot && shadowRoot.removeEventListener("mousedown", _userPopoverShadowHandler, true);
+      _userPopoverShadowHandler = null;
+    }
+    if (_userPopoverDocHandler) {
+      document.removeEventListener("mousedown", _userPopoverDocHandler, true);
+      _userPopoverDocHandler = null;
     }
 
     hostEl = document.createElement("div");
@@ -2157,31 +2161,35 @@
     p.style.display = shouldShow ? "block" : "none";
     if (shouldShow) {
       renderUserPopover();
-      // ★ 0.3.4: 先清理上次的监听器（开→关→开 时防止重复 add）
-      if (_userPopoverDocClickHandler) {
-        document.removeEventListener("mousedown", _userPopoverDocClickHandler, true);
-        _userPopoverDocClickHandler = null;
-      }
-      // 用 capture 阶段 + composedPath 判定（shadow 内部事件 retarget 到 host，要用 composedPath 拿真实 target）
+      // ★ 0.3.4 v2: 清理上次监听器 + 用双 listener 替代 composedPath
+      _cleanupUserPopoverListeners();
       setTimeout(() => {
-        _userPopoverDocClickHandler = (e) => {
-          const tgt = e.composedPath ? e.composedPath()[0] : e.target;
-          // 命中 badge 或 popover 内部 → 不关
-          if (tgt && tgt.closest && tgt.closest("#dcfw-user-badge, .dcfw-user-popover")) return;
+        // Tier 1: shadowRoot capture — shadow 内部无 retarget，e.target 就是真实元素
+        _userPopoverShadowHandler = (e) => {
+          if (e.target && e.target.closest && e.target.closest("#dcfw-user-badge, .dcfw-user-popover")) return;
           toggleUserPopover(false);
-          if (_userPopoverDocClickHandler) {
-            document.removeEventListener("mousedown", _userPopoverDocClickHandler, true);
-            _userPopoverDocClickHandler = null;
-          }
         };
-        document.addEventListener("mousedown", _userPopoverDocClickHandler, true);
+        shadowRoot.addEventListener("mousedown", _userPopoverShadowHandler, true);
+        // Tier 2: document — 面板外点击用 hostEl.contains（比 composedPath 可靠）
+        _userPopoverDocHandler = (e) => {
+          // shadow 内部事件 retarget 到 hostEl → contains=true，不关（交给 Tier 1）
+          if (hostEl && hostEl.contains(e.target)) return;
+          toggleUserPopover(false);
+        };
+        document.addEventListener("mousedown", _userPopoverDocHandler, true);
       }, 0);
     } else {
-      // ★ 0.3.4: 显式关闭时也清理监听器（点自身 badge 关闭的场景）
-      if (_userPopoverDocClickHandler) {
-        document.removeEventListener("mousedown", _userPopoverDocClickHandler, true);
-        _userPopoverDocClickHandler = null;
-      }
+      _cleanupUserPopoverListeners();
+    }
+  }
+  function _cleanupUserPopoverListeners() {
+    if (_userPopoverShadowHandler) {
+      shadowRoot && shadowRoot.removeEventListener("mousedown", _userPopoverShadowHandler, true);
+      _userPopoverShadowHandler = null;
+    }
+    if (_userPopoverDocHandler) {
+      document.removeEventListener("mousedown", _userPopoverDocHandler, true);
+      _userPopoverDocHandler = null;
     }
   }
 
@@ -3034,7 +3042,8 @@
   // ★ 0.2.10: 模块级引用 _popoverDocClickHandler，避免 setTimeout 内 onDocClick 闭包
   //   每次新建后没被外部点击清理会泄漏（旧实现：开→关→开→关... → N 个监听器）
   let _popoverDocClickHandler = null;
-  let _userPopoverDocClickHandler = null;   // ★ 0.3.4: display_name popover 同理
+  let _userPopoverShadowHandler = null;  // ★ 0.3.4 v2: shadowRoot capture（无 retarget）
+  let _userPopoverDocHandler = null;     // ★ 0.3.4 v2: document capture（hostEl.contains 兜底）
   function toggleModePopover(show) {
     const pop = shadowRoot.getElementById("dcfw-mode-popover");
     if (!pop) return;
