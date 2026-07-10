@@ -16,7 +16,9 @@ class BridgeConfig(BaseModel):
     mcp_server_cmd: str = "python -m mcp_server"  # MCP server 启动命令
     max_concurrent: int = 1              # 最大并发任务数
     # 【模型锁定】只能使用授权模型；空字符串表示跟随调用方环境变量
-    claude_model: str = "MiniMax-M3"
+    claude_model: str = "deepseek-v4-pro[1m]"
+    # Claude Code 子进程额外环境变量（注入到 claude CLI 子进程）
+    claude_env: dict[str, str] = {}
 
     @field_validator("claude_model")
     @classmethod
@@ -28,7 +30,7 @@ class BridgeConfig(BaseModel):
         if v == "":
             # 空字符串 = 不强制，透传 ANTHROPIC_MODEL 环境变量
             return v
-        ALLOWED = {"MiniMax-M3"}
+        ALLOWED = {"MiniMax-M3", "deepseek-v4-pro[1m]", "deepseek-v4-flash"}
         if v not in ALLOWED:
             raise ValueError(
                 f"模型 {v!r} 未授权！仅允许: {sorted(ALLOWED)}。"

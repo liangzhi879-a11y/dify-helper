@@ -174,12 +174,15 @@ class SessionManager:
 
             # 3. 启动子进程
             try:
-                # 【模型锁定】强制注入 ANTHROPIC_MODEL 环境变量，
-                # 防止任何调用方（如 MCP tool / 工作流）篡改模型
+                # 【模型锁定】强制注入 claude_env 环境变量，
+                # 防止任何调用方（如 MCP tool / 工作流）篡改模型或 API 配置
                 proc_env = os.environ.copy()
                 if self._config.claude_model:
                     proc_env["ANTHROPIC_MODEL"] = self._config.claude_model
-                    print(f"[SessionManager] locking model to: {self._config.claude_model}")
+                # 合并 claude_env 中的所有环境变量（BASE_URL / AUTH_TOKEN / MODEL 等）
+                for k, v in self._config.claude_env.items():
+                    proc_env[k] = v
+                print(f"[SessionManager] locking model to: {self._config.claude_model}")
 
                 session.claude_proc = await asyncio.create_subprocess_exec(
                     *cmd,
@@ -543,6 +546,8 @@ class SessionManager:
             proc_env = os.environ.copy()
             if self._config.claude_model:
                 proc_env["ANTHROPIC_MODEL"] = self._config.claude_model
+            for k, v in self._config.claude_env.items():
+                proc_env[k] = v
 
             cmd = build_stream_json_command(
                 self._config.claude_path,

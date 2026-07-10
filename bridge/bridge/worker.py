@@ -78,10 +78,12 @@ class Worker:
             )
 
             # 4. 启动子进程，工作目录设为 config.work_dir
-            # 【模型锁定】强制注入 ANTHROPIC_MODEL
+            # 【模型锁定】强制注入 claude_env 环境变量
             proc_env = os.environ.copy()
             if self._config.claude_model:
                 proc_env["ANTHROPIC_MODEL"] = self._config.claude_model
+            for k, v in self._config.claude_env.items():
+                proc_env[k] = v
 
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
