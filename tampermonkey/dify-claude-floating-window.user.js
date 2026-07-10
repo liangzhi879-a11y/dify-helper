@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window
 // @namespace    https://github.com/dify-helper
-// @version      0.3.12
+// @version      0.3.13
 // @description  本机 Dify 调试专用版：与本地 bridge 配合，悬浮 Claude CLI
 // @author       dify-helper
 // @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
@@ -234,6 +234,58 @@
 
 (function () {
   "use strict";
+
+  // ============================================================
+  // 主机白名单：拒绝在公网域名激活（feathersound.cn 等无关页面）
+  //   @match http://*/* 会让脚本在所有 http 页面注入，必须运行时再过滤一次
+  //   允许：localhost / 127.0.0.1 / .local / RFC1918 / 公网 IP / 单标签 hostname
+  //   拒绝：常见公网 TLD（com/cn/net/org/io/...）
+  // ============================================================
+  var _PUBLIC_TLDS = {
+    com: 1, net: 1, org: 1, info: 1, biz: 1, xyz: 1, top: 1, vip: 1,
+    club: 1, site: 1, tech: 1, app: 1, dev: 1, wiki: 1, store: 1, shop: 1,
+    pro: 1, mobi: 1, name: 1, cc: 1, tv: 1, co: 1, io: 1, me: 1, ai: 1,
+    cn: 1, "com.cn": 1, "net.cn": 1, "org.cn": 1, "edu.cn": 1, "gov.cn": 1,
+    hk: 1, tw: 1, jp: 1, kr: 1, uk: 1, de: 1, fr: 1, ru: 1,
+  };
+  function _isPrivateHost(rawHost) {
+    if (!rawHost) return false;
+    var host = String(rawHost).toLowerCase();
+    // 剥 IPv6 brackets + IPv4 端口（[::1]:9980 / <公网 IP>:9980）
+    if (host.charAt(0) === "[") {
+      var rb = host.indexOf("]");
+      if (rb >= 0) host = host.slice(1, rb);
+    } else if (/^[\d.]+:\d+$/.test(host)) {
+      host = host.split(":")[0];
+    }
+    if (host === "localhost" || host === "127.0.0.1" || host === "::1") return true;
+    if (host.endsWith(".local") || host.endsWith(".lan") || host.endsWith(".internal")) return true;
+    // IPv4（任意 IP 段都算：用户用公网 IP 远程访问 Dify 是合法用例）
+    var m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (m && (+m[1] <= 255) && (+m[2] <= 255) && (+m[3] <= 255) && (+m[4] <= 255)) return true;
+    // 单标签 host（myserver / dify 等 mDNS / 内网名）
+    if (host.indexOf(".") < 0) return true;
+    // 多标签：TLD 不在白名单 → 公网域名 → 拒绝
+    var tld = host.split(".").pop();
+    return !_PUBLIC_TLDS[tld];
+  }
+  if (!_isPrivateHost(location.hostname)) {
+    // 公网域名（feathersound.cn 等），不是 Dify。静默退出 ——
+    // 不注 FAB、不挂 unhandledrejection、不污染页面。
+    return;
+  }
+
+  // ============================================================
+  // 内部错误 sentinel：全局 error/unhandledrejection 只归因 plugin 自身，
+  //   页面原生 JS 报错（feathersound.cn theme.js 的 null.dataset）忽略
+  // ============================================================
+  var _DCFW_SENTINEL = "__dcfw_internal_error__";
+  function _markDcfwError(err) {
+    if (err && typeof err === "object") {
+      try { err[_DCFW_SENTINEL] = true; } catch (_) {}
+    }
+    return err;
+  }
 
   // ============================================================
   // 远程访问版配置
@@ -700,11 +752,12 @@
             // ★ 0.3.8: GM_xmlhttpRequest 传 raw err（{error, status} 对象），
             //   直接 reject 会让上游 e.message || e 走到 e 分支 → toString "[object Object]"
             //   包成 Error 让上游能拿到 .message
+            // ★ 0.3.13: 加 sentinel — 让 unhandledrejection 监听器识别这是我们自己的错
             const msg = (err && (err.error || err.message)) || "network error";
-            reject(new Error("GM network error: " + msg + " (" + url + ")"));
+            reject(_markDcfwError(new Error("GM network error: " + msg + " (" + url + ")")));
           },
           ontimeout: function () {
-            reject(new Error("GM_xmlhttpRequest timeout: " + url));
+            reject(_markDcfwError(new Error("GM_xmlhttpRequest timeout: " + url)));
           },
         },
         options || {}
@@ -974,12 +1027,19 @@
     overlay.onclick = () => overlay.remove();
   }
   // 注册全局错误捕获（必须在 injectUI 之前就生效，所以放在模块顶层）
+  // ★ 0.3.13: 仅归因 plugin 自身的 sentinel-标记错误 —— 页面原生 JS 报错
+  //   （如 feathersound.cn theme.js 的 TypeError）不再被误标为 "Dify Bridge 错误"
   window.addEventListener("error", (e) => {
-    if (e && e.error) _recordFatal("window.error", e.error);
-    else if (e && e.message) _recordFatal("window.error", new Error(e.message));
+    const err = (e && e.error) || (e && e.message ? new Error(e.message) : null);
+    if (!err) return;
+    if (err[_DCFW_SENTINEL] !== true) return; // 页面原生错误，不归因到 bridge
+    _recordFatal("window.error", err);
   });
   window.addEventListener("unhandledrejection", (e) => {
-    _recordFatal("unhandledrejection", e.reason || new Error("unknown rejection"));
+    const reason = e && e.reason;
+    if (!reason) return;
+    if (reason[_DCFW_SENTINEL] !== true) return; // 页面原生 promise rejection
+    _recordFatal("unhandledrejection", reason);
   });
 
   function togglePanel() {

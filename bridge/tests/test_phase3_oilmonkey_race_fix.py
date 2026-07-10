@@ -49,7 +49,7 @@ def test_local_fix() -> list[str]:
     src = read_js(LOCAL_JS)
 
     # 1) 版本号已 bump 到 0.3.12
-    failures += assert_contains("local.version", src, "@version      0.3.12")
+    failures += assert_contains("local.version", src, "@version      0.3.13")
 
     # 2) v0.3.1 race condition 修复说明注释存在
     failures += assert_contains("local.changelog_v031", src, "★ 0.3.1 修复 v0.3.0 启动 race condition")
@@ -105,6 +105,17 @@ def test_local_fix() -> list[str]:
     failures += assert_contains("local.stop_btn_click_branch", src, "stopCurrentRun()")
     failures += assert_contains("local.stop_btn_enter_branch", src, "stopCurrentRun()")
     failures += assert_contains("local.stop_btn_title", src, "停止 agent")
+    # 8g) v0.3.13: 公网域名激活过滤（feathersound.cn 等不再误报）
+    failures += assert_contains("local.host_filter_isPrivateHost_def", src, "function _isPrivateHost(")
+    failures += assert_contains("local.host_filter_PUBLIC_TLDS", src, "_PUBLIC_TLDS")
+    failures += assert_contains("local.host_filter_early_return", src, "location.hostname")
+    # 8h) v0.3.13: 错误 sentinel（不把页面原生 JS 错当成 bridge 错）
+    failures += assert_contains("local.sentinel_constant", src, "_DCFW_SENTINEL")
+    failures += assert_contains("local.sentinel_markDcfwError_function", src, "function _markDcfwError(")
+    failures += assert_contains("local.sentinel_gmFetch_onerror", src, '_markDcfwError(new Error("GM network')
+    failures += assert_contains("local.sentinel_gmFetch_ontimeout", src, '_markDcfwError(new Error("GM_xmlhttpRequest timeout')
+    failures += assert_contains("local.sentinel_unhandledrejection_check", src, "reason[_DCFW_SENTINEL] !== true")
+    failures += assert_contains("local.sentinel_window_error_check", src, "err[_DCFW_SENTINEL] !== true")
     # 9) statusbar 内部子元素（mode/badge/page）背景/边框/圆角都被覆盖为透明
     failures += assert_contains("local.mode_badge_in_statusbar_transparent", src, ".dcfw-statusbar-cell .dcfw-mode-badge {")
     failures += assert_contains("local.bridge_badge_in_statusbar_transparent", src, ".dcfw-statusbar-cell .dcfw-bridge-badge {")
@@ -192,7 +203,7 @@ def test_remote_fix() -> list[str]:
     failures = []
     src = read_js(REMOTE_JS)
 
-    failures += assert_contains("remote.version", src, "@version      0.3.12-remote")
+    failures += assert_contains("remote.version", src, "@version      0.3.13-remote")
 
     # v0.3.3-remote 修复 changelog
     failures += assert_contains("remote.changelog_v033", src, "★ 0.3.3-remote 修复 Firefox 上点 FAB 直接闪退的真根因")
@@ -236,6 +247,17 @@ def test_remote_fix() -> list[str]:
     failures += assert_contains("remote.stop_btn_click_branch", src, "stopCurrentRun()")
     failures += assert_contains("remote.stop_btn_enter_branch", src, "stopCurrentRun()")
     failures += assert_contains("remote.stop_btn_title", src, "停止 agent")
+    # 8g) v0.3.13-remote: 公网域名激活过滤
+    failures += assert_contains("remote.host_filter_isPrivateHost_def", src, "function _isPrivateHost(")
+    failures += assert_contains("remote.host_filter_PUBLIC_TLDS", src, "_PUBLIC_TLDS")
+    failures += assert_contains("remote.host_filter_early_return", src, "location.hostname")
+    # 8h) v0.3.13-remote: 错误 sentinel
+    failures += assert_contains("remote.sentinel_constant", src, "_DCFW_SENTINEL")
+    failures += assert_contains("remote.sentinel_markDcfwError_function", src, "function _markDcfwError(")
+    failures += assert_contains("remote.sentinel_gmFetch_onerror", src, '_markDcfwError(new Error("GM network')
+    failures += assert_contains("remote.sentinel_gmFetch_ontimeout", src, '_markDcfwError(new Error("GM_xmlhttpRequest timeout')
+    failures += assert_contains("remote.sentinel_unhandledrejection_check", src, "reason[_DCFW_SENTINEL] !== true")
+    failures += assert_contains("remote.sentinel_window_error_check", src, "err[_DCFW_SENTINEL] !== true")
 
     failures += assert_regex("remote.start_async", src, r"async function start\(\)")
     m = re.search(r"await detectBridge\(\);\s*\n\s*await bootstrap\(\);", src)
