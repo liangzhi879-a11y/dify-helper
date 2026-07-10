@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Dify Claude Floating Window (Remote Edition)
 // @namespace    https://github.com/dify-helper
-// @version      0.3.11-remote
+// @version      0.3.12-remote
 // @description  远程访问 Dify 专用版：适配 http://REDACTED_HOST:9980/，桥接服务自动探测
 // @author       dify-helper
 // @homepageURL  https://github.com/liangzhi879-a11y/dify-helper
@@ -35,6 +35,11 @@
 //   现在改为自动从当前页面 URL 推导：用户在 http://<公网 IP>:9980/ 访问时
 //   自动派生 http://<公网 IP>:8002，公网 IP 不入仓。
 //   本机/loopback 访问仍只探测 fallback。GM_getValue 仍作为硬覆盖保留。
+// ★ 0.3.12-remote 发送按钮复用为停止按钮（打断 agent，与本地版同步）：
+//   - agent 运行时：红色 + ⏹ + 呼吸动画 + title="停止 agent（中断当前流）"
+//   - idle 时：原 ➤ + Claude 橙
+//   - 中断：abort SSE/poll → finalize thinking → 清 rAF 队列 → setSending(false)
+//   - keydown Enter 流式中也走 stop（流中再发消息没意义）
 // ★ 0.3.10-remote initSession 错误消息带上 BRIDGE 探测结果 + 远程配置提示：
 //   远程用户场景下，错误消息要直接告诉用户哪个候选失败了、错在哪。
 //   之前只有 "GM network error: network error (URL)"，看不出 GM 没配置或路由器没转发。
@@ -1331,6 +1336,16 @@
     }
     .dcfw-send-btn:hover { background: #B8644A; }
     .dcfw-send-btn:disabled { background: #D4CCB8; cursor: not-allowed; }
+    /* ★ 0.3.12-remote: 发送按钮复用为停止按钮（agent 运行时）—— 红色显眼 + 矩形 stop 图标 */
+    .dcfw-send-btn.dcfw-stop-btn {
+      background: #DC2626;  /* 危险红，与 Claude 橙形成对比 */
+      animation: dcfw-pulse-stop 1.5s ease-in-out infinite;
+    }
+    .dcfw-send-btn.dcfw-stop-btn:hover { background: #B91C1C; }
+    @keyframes dcfw-pulse-stop {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+      50%      { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+    }
 
     /* 斜杠指令面板 */
     .dcfw-cmd-palette {
@@ -1774,7 +1789,11 @@
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        if (!state.isSending) sendMessage();
+        if (state.isSending) {
+          stopCurrentRun();
+        } else {
+          sendMessage();
+        }
       }
       // 斜杠指令面板导航
       const palette = shadowRoot.getElementById("dcfw-cmd-palette");
@@ -1808,7 +1827,11 @@
     });
 
     sendBtn.addEventListener("click", () => {
-      if (!state.isSending) sendMessage();
+      if (state.isSending) {
+        stopCurrentRun();
+      } else {
+        sendMessage();
+      }
     });
 
     // ESC 关闭面板（仅在面板打开时生效；输入框按 ESC 走原生行为，不关面板）
@@ -3779,11 +3802,42 @@ function appendThinking(text) {
     const input = shadowRoot.getElementById("dcfw-chat-input");
     sendBtn.disabled = sending;
     input.disabled = false; // 输入框保持可用
+    // ★ 0.3.12-remote: 复用发送按钮为停止按钮 —— agent 运行时切到 ⏹ + 红色 + 呼吸动画
     if (sending) {
+      sendBtn.textContent = "⏹";
+      sendBtn.title = "停止 agent（中断当前流）";
+      sendBtn.classList.add("dcfw-stop-btn");
       updateStatus("思考中...");
     } else {
+      sendBtn.textContent = "➤";
+      sendBtn.title = "发送消息";
+      sendBtn.classList.remove("dcfw-stop-btn");
       updateStatus(state.sessionId ? "已连接" : "未连接");
     }
+  }
+
+  // ★ 0.3.12-remote: 打断 agent —— abort 当前 SSE/poll + 收尾流状态
+  function stopCurrentRun() {
+    // 1) 终止 SSE / polling
+    if (state.sseRequest) {
+      try { state.sseRequest.abort(); } catch (_) {}
+      // 0.2.16 之后清 sseRequest 会让 debug 面板显示"未连接"，但 stop 是显式中断，
+      // 这里清掉 + 后续由 sendMessage 重建 listener —— 比 0.2.16 注释里的 idle-but-ready
+      // 更适合 stop 场景（用户明确打断了）
+      state.sseRequest = null;
+    }
+    state.pollingActive = false;
+    // 2) 关闭当前 thinking 块（让 final 状态收敛）
+    if (typeof finalizeThinkingBlock === "function") {
+      try { finalizeThinkingBlock(); } catch (_) {}
+    }
+    state.currentAssistantBubble = null;
+    // 3) 清 rAF flush + 队列
+    try { resetStreamBuffers(); } catch (_) {}
+    // 4) UI 状态收尾
+    setSending(false);
+    // 5) 系统消息告知用户
+    addSystemMessage("⏹ 已打断 agent（部分响应已保留在消息区）");
   }
 
   // ★ 0.2.12: 状态文字 → 图标映射（title 保留可读性）
