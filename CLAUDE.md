@@ -249,7 +249,7 @@ workflow:            # advanced-chat/workflow 用
 | 知识库索引失败 | `dify_get_indexing_status` | `dify_list_configured_models` 确认 embedding 模型 | 索引端点是 **GET 不是 POST** |
 | "model not found" / provider 报错 | `dify_list_providers` + `dify_list_provider_models(provider)` | 让用户在 Dify 设置页配 | **不要凭名字改 model**，先列实际名 |
 | MCP 工具返回 `response_too_large` | 改用 `detail="summary"` 或 `detail="node"` | 警告用户详情被截断 | 不是真的错误，是 14KB 安全网降级 |
-| Bash EROFS | 本 session 无法用 Bash | 用 Write 工具做文件改动 | 不要试 `mkdir` / `cat` 等子进程命令 |
+| Bash EROFS | **仅限开发 session（非 bridge）**：部分环境 Bash 子进程可能遇 EROFS | 用 Write 工具做文件改动 | 正式 bridge session（DeepSeek API）Bash 完全可用，不要被此条目误导 |
 | TaskCreate lock 错误 | 不要硬试 | 用本文件的 todo 列表跟踪 | 本实例环境问题 |
 | **改 draft 前** | 触发 `dify-workflow-canvas-debugger` + `dify-patch-codegen` | 跑 `python scripts/dify_schema.py drift` 看是否有字段漂移 | **不要凭记忆写字段**，必查 `docs/dify-raw/` |
 | **UI 显示 "0/1/2/3/4"（outputs array index）** | 触发 `dify-schema-drift-detector` + 查 [[dify-code-node-outputs-require-value-type]] | code 节点 `outputs[]` 补 `value_type = type` | **根因 = value_type 缺失**，不是 label 或 variable 名 |
